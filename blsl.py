@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import bpy
 import sys
 from enum import Enum, auto
 from typing import List, Dict
@@ -52,6 +53,13 @@ class StorageQualifier(Enum):
     In = auto()
     Out = auto()
     InOut = auto()
+
+    def is_output(self) -> bool:
+        match self:
+            case StorageQualifier.Out | StorageQualifier.InOut:
+                return True
+            case _:
+                return False
 
 
 storage_qualifiers: Dict[TokenKind, StorageQualifier] = {
@@ -113,34 +121,48 @@ def tokenize(src: str) -> List[Token]:
 
 
 class Def:
+    __match_args__ = ('kind', )
+
     def __init__(self, kind):
         self.kind = kind
 
 
 class Ty:
+    __match_args__ = ('kind', )
+
     def __init__(self, kind: TypeKind):
         self.kind = kind
 
 
 class Ident:
+    __match_args__ = ('name', )
+
     def __init__(self, name: str):
         self.name = name
 
 
 class TyQualifier:
-    pass
+    def is_output(self) -> bool:
+        raise NotImplementedError()
 
 
 class Storage(TyQualifier):
+    __match_args__ = ('kind', )
+
     def __init__(self, kind: StorageQualifier):
         self.kind = kind
 
+    def is_output(self) -> bool:
+        return self.kind.is_output()
+
 
 class FnArg:
-    def __init__(self, name: Ident, ty: Ty, ty_qualifier: TyQualifier):
+    __match_args__ = ('name', 'ty', 'ty_qualifiers', )
+
+    def __init__(self, name: Ident, ty: Ty, ty_qualifiers: List[TyQualifier]):
         self.name = name
         self.ty = ty
-        self.ty_qualifier = ty_qualifier
+        self.ty_qualifiers = ty_qualifiers
 
 
 class Block:
@@ -149,6 +171,8 @@ class Block:
 
 
 class Fn:
+    __match_args__ = ('name', 'args', 'ret_ty', 'body', )
+
     def __init__(self, name: Ident, args: List[FnArg], ret_ty: Ty, body: Block):
         self.name = name
         self.args = args
@@ -166,14 +190,14 @@ class Parser:
         self.tokens = tokens
         self.i = 0
         self.tokens_len = len(self.tokens)
-        self.t = self.tokens[self.i]
+        self.t: Token = self.tokens[self.i]
 
     def eat(self):
         if self.i < self.tokens_len - 1:
             self.i += 1
             self.t = self.tokens[self.i]
         else:
-            self.t = None
+            self.t = None  # type: ignore
 
     def expect(self, kind: TokenKind) -> Token:
         if self.t.kind == kind:
@@ -249,6 +273,91 @@ class Parser:
         return Module(defs)
 
 
+def parser_from_src(src: str) -> Parser:
+    tokens = tokenize(src)
+    return Parser(tokens)
+
+
+def parser_from_file(filepath: str) -> Parser:
+    with open(filepath, 'r') as f:
+        src = f.read()
+        return parser_from_src(src)
+
+
+class NodeTree:
+    def __init__(self, name: str, ty: str):
+        if tree := bpy.data.node_groups.get(name):
+            bpy.data.node_groups.remove(tree)
+        self._nt = bpy.data.node_groups.new(type=ty, name=name)
+        self._ins = NodeTreeInputs(self)
+        self._outs = NodeTreeOutputs(self)
+
+    def add_node(self, ty) -> bpy.types.Node:
+        return self._nt.nodes.new(type=ty)
+
+    def add_input(self, name: str, ty: TypeKind):
+        self._ins.add_sock(name, ty)
+
+    def add_output(self, name: str, ty: TypeKind):
+        self._outs.add_sock(name, ty)
+
+
+def get_blender_socket_type(ty: TypeKind) -> str:
+    match ty:
+        case TypeKind.Void:
+            return "NodeSocketVirtual"
+        case TypeKind.Int:
+            return "NodeSocketInteger"
+        case TypeKind.Vec4:
+            return "NodeSocketVector"
+
+
+class NodeTreeInputs:
+    def __init__(self, nt: NodeTree):
+        self._grp_in = nt.add_node('NodeGroupInput')
+        self._in = nt._nt.inputs
+
+    def add_sock(self, name: str, ty: TypeKind):
+        self._in.new(type=get_blender_socket_type(ty), name=name)
+
+
+class NodeTreeOutputs:
+    def __init__(self, nt: NodeTree):
+        self._grp_out = nt.add_node('NodeGroupOutput')
+        self._out = nt._nt.outputs
+
+    def add_sock(self, name: str, ty: TypeKind):
+        self._out.new(type=get_blender_socket_type(ty), name=name)
+
+
+class NodeGen:
+    def __init__(self, module: Module, ctx: bpy.types.Context):
+        self.module = module
+        self.ctx = ctx
+        self.nt = self.ctx.space_data.node_tree
+
+    def add_param(self, arg: FnArg, nt: NodeTree):
+        match arg:
+            case FnArg(Ident(name), Ty(kind), ty_qualifiers):
+                for qual in ty_qualifiers:
+                    if qual.is_output():
+                        nt.add_output(name, kind)
+                        break
+                nt.add_input(name, kind)
+
+    def emit(self):
+        for deff in self.module.defs:
+            match deff:
+                case Def(Fn(Ident(name), args, ret_ty, body)):
+                    self.nt.nodes.clear()
+                    nt = NodeTree(name, 'ShaderNodeTree')
+                    node = self.nt.nodes.new('ShaderNodeGroup')
+                    for arg in args:
+                        self.add_param(arg, nt)
+
+                    node.node_tree = nt._nt
+
+
 def main(argv: List[str]):
     arg0 = argv[0]
     argv = argv[1:]
@@ -260,7 +369,6 @@ def main(argv: List[str]):
         tokens = tokenize(src)
         parser = Parser(tokens)
         ast = parser.parse()
-        print(ast)
 
 
 if __name__ == "__main__":
