@@ -12,7 +12,8 @@ from bpy.types import (
     PropertyGroup,
     WindowManager)
 
-from .blsl import parser_from_src, parser_from_file, NodeGen
+from .compiler.Parser import parser_from_src, parser_from_file
+from .compiler.nodegen import NodeGen
 
 
 class COM_PT_Panel(Panel):
@@ -72,6 +73,8 @@ class COM_OT_compile(Operator):
             parser = parser_from_src(gc.text_prop.as_string())
         elif gc.source_type == "EXTERNAL":
             parser = parser_from_file(gc.filepath)
+        else:
+            assert False
 
         ast = parser.parse()
         if gc.debug_ast_output:
