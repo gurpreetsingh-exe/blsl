@@ -14,6 +14,7 @@ from bpy.types import (
 
 from .compiler.Parser import parser_from_src, parser_from_file
 from .compiler.nodegen import NodeGen
+from beeprint import pp
 
 
 class COM_PT_Panel(Panel):
@@ -64,7 +65,7 @@ class COM_OT_compile(Operator):
 
     def dump_ast(self, ast):
         print("======= AST dump start =======")
-        print(ast)
+        pp(ast, max_depth=20)
         print("======== AST dump end ========")
 
     def execute(self, context):

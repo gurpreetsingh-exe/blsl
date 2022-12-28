@@ -11,6 +11,16 @@ storage_qualifiers: Dict[TokenKind, StorageQualifier] = {
 }
 
 
+binary_op: Dict[TokenKind, BinaryKind] = {
+    TokenKind.Plus: BinaryKind.Add,
+    TokenKind.Minus: BinaryKind.Sub,
+    TokenKind.Asterisk: BinaryKind.Mul,
+    TokenKind.Slash: BinaryKind.Div,
+    TokenKind.EqEq: BinaryKind.Eq,
+    TokenKind.NotEq: BinaryKind.NotEq,
+}
+
+
 class Parser:
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
@@ -24,6 +34,10 @@ class Parser:
             self.t = self.tokens[self.i]
         else:
             self.t = None  # type: ignore
+
+    def peek(self) -> Token | None:
+        if self.i < self.tokens_len - 2:
+            return self.tokens[self.i + 1]
 
     def expect(self, kind: TokenKind) -> Token:
         if self.t.kind == kind:
@@ -77,10 +91,93 @@ class Parser:
         self.expect(TokenKind.RParen)
         return args
 
+    def parse_primary(self) -> Expr:
+        match self.t.kind:
+            case TokenKind.Ident:
+                next = self.peek()
+                if not next:
+                    assert False, "unexpected eof"
+                match next.kind:
+                    case TokenKind.LParen:
+                        assert False, "function call"
+                    case _:
+                        assert False, "identifier"
+            case _:
+                assert False, "not implemented"
+
+    def parse_unary(self) -> Expr:
+        return self.parse_primary()
+
+    def parse_factor(self) -> Expr:
+        return self.parse_unary()
+
+    def parse_term(self) -> Expr:
+        return self.parse_factor()
+
+    def parse_comparison_expr(self) -> Expr:
+        return self.parse_term()
+
+    def parse_assign_expr(self) -> Expr:
+        left = self.parse_comparison_expr()
+        while self.t.kind == TokenKind.Eq:
+            self.eat()
+            right = self.parse_assign_expr()
+            left = Expr(Assign(left, right))
+        return left
+
+    def parse_conditional_expr(self) -> Expr:
+        left = self.parse_assign_expr()
+        while self.t.kind in [TokenKind.EqEq, TokenKind.NotEq]:
+            op = binary_op[self.t.kind]
+            self.eat()
+            right = self.parse_assign_expr()
+            left = Expr(Binary(left, right, op))
+        return left
+
+    def parse_expr(self) -> Expr:
+        return self.parse_conditional_expr()
+
+    def parse_expr_stmt(self) -> ExprStmt | None:
+        exprs: List[Expr] = []
+        while self.t.kind != TokenKind.Semi:
+            exprs.append(self.parse_expr())
+            if self.t.kind == TokenKind.Semi:
+                break
+            elif self.t.kind == TokenKind.Comma:
+                self.eat()
+                continue
+            else:
+                assert False, "parse_expr_stmt()"
+        self.expect(TokenKind.Semi)
+        return ExprStmt(exprs)
+
+    def parse_decl_stmt(self) -> Decl:
+        ty = self.parse_ty()
+        name = self.parse_ident()
+        if self.t.kind == TokenKind.Semi:
+            self.eat()
+            return Decl(name, ty, None)
+        elif self.t.kind == TokenKind.Eq:
+            self.eat()
+            return Decl(name, ty, self.parse_expr())
+        else:
+            assert False
+
+    def parse_stmt(self) -> Stmt | None:
+        if ty := self.t.kind.get_ty():
+            return Stmt(self.parse_decl_stmt())
+        else:
+            if stmt := self.parse_expr_stmt():
+                return Stmt(stmt)
+
     def parse_block(self) -> Block:
         self.expect(TokenKind.LBrace)
+        stmts: List[Stmt] = []
+        while self.t and self.t.kind != TokenKind.RBrace:
+            if stmt := self.parse_stmt():
+                stmts.append(stmt)
         self.expect(TokenKind.RBrace)
-        return Block()
+        return Block(stmts)
 
     def parse_def(self) -> Def:
         ty = self.parse_ty()

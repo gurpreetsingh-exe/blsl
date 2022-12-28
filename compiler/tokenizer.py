@@ -26,6 +26,14 @@ class TokenKind(Enum):
     LBrace = auto()
     RBrace = auto()
     Comma = auto()
+    Eq = auto()
+    Semi = auto()
+    Plus = auto()
+    Minus = auto()
+    Asterisk = auto()
+    Slash = auto()
+    EqEq = auto()
+    NotEq = auto()
 
     def get_ty(self) -> TypeKind | None:
         match self:
@@ -51,6 +59,14 @@ punc: Dict[str, TokenKind] = {
     '{': TokenKind.LBrace,
     '}': TokenKind.RBrace,
     ',': TokenKind.Comma,
+    '=': TokenKind.Eq,
+    ';': TokenKind.Semi,
+    '+': TokenKind.Plus,
+    '-': TokenKind.Minus,
+    '*': TokenKind.Asterisk,
+    '/': TokenKind.Slash,
+    '==': TokenKind.EqEq,
+    '!=': TokenKind.NotEq,
 }
 
 

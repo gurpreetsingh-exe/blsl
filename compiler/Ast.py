@@ -67,9 +67,53 @@ class FnArg:
         self.ty_qualifiers = ty_qualifiers
 
 
+class Expr:
+    def __init__(self, kind):
+        self.kind = kind
+
+
+class BinaryKind(Enum):
+    Add = auto()
+    Sub = auto()
+    Mul = auto()
+    Div = auto()
+    Eq = auto()
+    NotEq = auto()
+
+
+class Binary:
+    def __init__(self, left: Expr, right: Expr, op: BinaryKind):
+        self.left = left
+        self.right = right
+        self.op = op
+
+
+class Assign:
+    def __init__(self, left: Expr, init: Expr):
+        self.left = left
+        self.init = init
+
+
+class Decl:
+    def __init__(self, name: Ident, ty: Ty, init: Expr | None):
+        self.name = name
+        self.ty = ty
+        self.init = init
+
+
+class ExprStmt:
+    def __init__(self, exprs: List[Expr]):
+        self.exprs = exprs
+
+
+class Stmt:
+    def __init__(self, kind: ExprStmt | Decl):
+        self.kind = kind
+
+
 class Block:
-    def __init__(self):
-        pass
+    def __init__(self, stmts: List[Stmt]):
+        self.stmts = stmts
 
 
 class Fn:
