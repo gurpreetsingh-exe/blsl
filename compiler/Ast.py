@@ -11,8 +11,12 @@ class Def:
 
 class TypeKind(Enum):
     Int = auto()
+    Float = auto()
     Void = auto()
     Vec4 = auto()
+
+    def display_name(self) -> str:
+        return self.name.lower()
 
 
 class Ty:
@@ -82,10 +86,11 @@ class BinaryKind(Enum):
 
 
 class Binary:
-    def __init__(self, left: Expr, right: Expr, op: BinaryKind):
+    def __init__(self, left: Expr, right: Expr, kind: BinaryKind):
         self.left = left
         self.right = right
-        self.op = op
+        self.kind = kind
+        self.ty: Ty | None = None
 
 
 class Assign:
@@ -94,7 +99,23 @@ class Assign:
         self.init = init
 
 
+class Int:
+    __match_args__ = ('value', )
+
+    def __init__(self, value: str):
+        self.value = value
+
+
+class Float:
+    __match_args__ = ('value', )
+
+    def __init__(self, value: str):
+        self.value = value
+
+
 class Decl:
+    __match_args__ = ('name', 'ty', 'init', )
+
     def __init__(self, name: Ident, ty: Ty, init: Expr | None):
         self.name = name
         self.ty = ty
@@ -102,12 +123,25 @@ class Decl:
 
 
 class ExprStmt:
+    __match_args__ = ("exprs", )
+
     def __init__(self, exprs: List[Expr]):
         self.exprs = exprs
 
 
+class Return:
+    __match_args__ = ('expr', )
+
+    def __init__(self, expr: Expr):
+        self.expr = expr
+
+
 class Stmt:
-    def __init__(self, kind: ExprStmt | Decl):
+    def __init__(self, kind: \
+            ExprStmt \
+            | Decl \
+            | Return \
+    ):
         self.kind = kind
 
 
@@ -116,13 +150,20 @@ class Block:
         self.stmts = stmts
 
 
-class Fn:
-    __match_args__ = ('name', 'args', 'ret_ty', 'body', )
+class FnSig:
+    __match_args__ = ('args', 'ret_ty', )
 
-    def __init__(self, name: Ident, args: List[FnArg], ret_ty: Ty, body: Block):
-        self.name = name
+    def __init__(self, args: List[FnArg], ret_ty: Ty):
         self.args = args
         self.ret_ty = ret_ty
+
+
+class Fn:
+    __match_args__ = ('name', 'sig', 'body', )
+
+    def __init__(self, name: Ident, sig: FnSig, body: Block):
+        self.name = name
+        self.sig = sig
         self.body = body
 
 

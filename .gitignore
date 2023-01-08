@@ -1,5 +1,9 @@
 *
 !*.*
 !/**/
+.*
+*.grammer
+*.ebnf
+*.glsl
 __pycache__/
 

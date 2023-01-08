@@ -14,11 +14,16 @@ from bpy.types import (
 
 from .compiler.Parser import parser_from_src, parser_from_file
 from .compiler.nodegen import NodeGen
+from .compiler.typechk import TyChecker
 from beeprint import pp
 
+try:
+    node_align = __import__("Node Align")
+except ImportError:
+    print("\"Node Align\" not found, nodes will not be aligned")
 
-class COM_PT_Panel(Panel):
-    bl_idname = "COM_PT_Panel"
+class BLSL_PT_Panel(Panel):
+    bl_idname = "BLSL_PT_Panel"
     bl_label = "GLSL Compiler"
     bl_region_type = "UI"
     bl_space_type = "NODE_EDITOR"
@@ -52,7 +57,7 @@ class COM_PT_Panel(Panel):
         row.prop(gc, "debug_token_output")
 
 
-class COM_OT_compile(Operator):
+class BLSL_OT_compile(Operator):
     bl_idname = "blsl_compiler.compile"
     bl_label = "Compile"
 
@@ -80,7 +85,10 @@ class COM_OT_compile(Operator):
         ast = parser.parse()
         if gc.debug_ast_output:
             self.dump_ast(ast)
-        NodeGen(ast, context).emit()
+        TyChecker(ast)
+        nodes = NodeGen(ast, context).emit()
+        if 'node_align' in globals():
+            node_align.operators.distribute_nodes(nodes, None, "HORIZONTAL")
         return {'FINISHED'}
 
 
@@ -98,9 +106,9 @@ class BLSLCompiler(PropertyGroup):
 
 
 classes = [
-    COM_PT_Panel,
+    BLSL_PT_Panel,
     BLSLCompiler,
-    COM_OT_compile,
+    BLSL_OT_compile,
 ]
 
 

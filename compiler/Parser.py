@@ -101,7 +101,11 @@ class Parser:
                     case TokenKind.LParen:
                         assert False, "function call"
                     case _:
-                        assert False, "identifier"
+                        return Expr(self.parse_ident())
+            case TokenKind.IntLit:
+                return Expr(Int(self.expect(TokenKind.IntLit).value))
+            case TokenKind.FloatLit:
+                return Expr(Float(self.expect(TokenKind.FloatLit).value))
             case _:
                 assert False, "not implemented"
 
@@ -114,19 +118,11 @@ class Parser:
     def parse_term(self) -> Expr:
         return self.parse_factor()
 
-    def parse_comparison_expr(self) -> Expr:
+    def parse_relational_expr(self) -> Expr:
         return self.parse_term()
 
-    def parse_assign_expr(self) -> Expr:
-        left = self.parse_comparison_expr()
-        while self.t.kind == TokenKind.Eq:
-            self.eat()
-            right = self.parse_assign_expr()
-            left = Expr(Assign(left, right))
-        return left
-
-    def parse_conditional_expr(self) -> Expr:
-        left = self.parse_assign_expr()
+    def parse_equality_expr(self) -> Expr:
+        left = self.parse_relational_expr()
         while self.t.kind in [TokenKind.EqEq, TokenKind.NotEq]:
             op = binary_op[self.t.kind]
             self.eat()
@@ -134,10 +130,21 @@ class Parser:
             left = Expr(Binary(left, right, op))
         return left
 
-    def parse_expr(self) -> Expr:
-        return self.parse_conditional_expr()
+    def parse_conditional_expr(self) -> Expr:
+        return self.parse_equality_expr()
 
-    def parse_expr_stmt(self) -> ExprStmt | None:
+    def parse_assign_expr(self) -> Expr:
+        left = self.parse_conditional_expr()
+        while self.t.kind == TokenKind.Eq:
+            self.eat()
+            right = self.parse_assign_expr()
+            left = Expr(Assign(left, right))
+        return left
+
+    def parse_expr(self) -> Expr:
+        return self.parse_assign_expr()
+
+    def parse_expr_stmt(self) -> ExprStmt:
         exprs: List[Expr] = []
         while self.t.kind != TokenKind.Semi:
             exprs.append(self.parse_expr())
@@ -164,10 +171,14 @@ class Parser:
             assert False
 
     def parse_stmt(self) -> Stmt | None:
-        if ty := self.t.kind.get_ty():
+        if self.t.kind.get_ty():
             return Stmt(self.parse_decl_stmt())
+        elif self.t.kind == TokenKind.Return:
+            self.eat()
+            return Stmt(Return(self.parse_expr()))
         else:
-            if stmt := self.parse_expr_stmt():
+            stmt = None
+            if stmt := self.parse_expr_stmt() and stmt and stmt.exprs:
                 return Stmt(stmt)
 
     def parse_block(self) -> Block:
@@ -185,7 +196,7 @@ class Parser:
         if self.t.kind == TokenKind.LParen:
             args = self.parse_fn_args()
             block = self.parse_block()
-            return Def(Fn(ident, args, ty, block))
+            return Def(Fn(ident, FnSig(args, ty), block))
         else:
             assert False, 'expected function definition'
 

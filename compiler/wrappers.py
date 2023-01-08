@@ -1,5 +1,6 @@
 import bpy
 from .Ast import TypeKind
+from typing import Dict
 
 class NodeTree:
     def __init__(self, name: str, ty: str):
@@ -18,6 +19,10 @@ class NodeTree:
     def add_output(self, name: str, ty: TypeKind):
         self._outs.add_sock(name, ty)
 
+    def link_to_output(self, name: str, sock: bpy.types.NodeSocket):
+        to = self._outs.get(name)
+        self._nt.links.new(sock, to)
+
 
 def get_blender_socket_type(ty: TypeKind) -> str:
     match ty:
@@ -25,6 +30,8 @@ def get_blender_socket_type(ty: TypeKind) -> str:
             return "NodeSocketVirtual"
         case TypeKind.Int:
             return "NodeSocketInt"
+        case TypeKind.Float:
+            return "NodeSocketFloat"
         case TypeKind.Vec4:
             return "NodeSocketVector"
 
@@ -37,6 +44,8 @@ class NodeTreeInputs:
     def add_sock(self, name: str, ty: TypeKind):
         self._in.new(type=get_blender_socket_type(ty), name=name)
 
+    def get(self, name: str) -> bpy.types.NodeSocket:
+        return self._grp_in.outputs[name]
 
 class NodeTreeOutputs:
     def __init__(self, nt: NodeTree):
@@ -45,4 +54,7 @@ class NodeTreeOutputs:
 
     def add_sock(self, name: str, ty: TypeKind):
         self._out.new(type=get_blender_socket_type(ty), name=name)
+
+    def get(self, name: str) -> bpy.types.NodeSocket:
+        return self._grp_out.inputs[name]
 

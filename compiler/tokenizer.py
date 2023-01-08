@@ -10,12 +10,15 @@ class Token:
 
 
 class TokenKind(Enum):
+    IntLit = auto()
+    FloatLit = auto()
     Ident = auto()
 
     Int = auto()
     Void = auto()
     Vec4 = auto()
 
+    Return = auto()
     Const = auto()
     In = auto()
     Out = auto()
@@ -50,6 +53,7 @@ keywords: Dict[str, TokenKind] = {
     'in': TokenKind.In,
     'out': TokenKind.Out,
     'inout': TokenKind.InOut,
+    'return': TokenKind.Return,
 }
 
 
@@ -89,6 +93,12 @@ def tokenize(src: str) -> List[Token]:
             while i < len(src) and src[i].isalnum():
                 i += 1
             add_token(TokenKind.Ident, begin, i)
+        elif c.isdigit():
+            begin = i
+            is_float = False
+            while i < len(src) and (src[i].isdigit() or (is_float := (src[i] == '.') | is_float)):
+                i += 1
+            add_token(TokenKind.FloatLit if is_float else TokenKind.IntLit, begin, i)
         elif c in punc:
             add_token(punc[c], i, i + 1)
             i += 1
