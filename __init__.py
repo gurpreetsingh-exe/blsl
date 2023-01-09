@@ -16,6 +16,9 @@ from .compiler.Parser import parser_from_src, parser_from_file
 from .compiler.nodegen import NodeGen
 from .compiler.typechk import TyChecker
 from beeprint import pp
+import os
+import pathlib
+import importlib
 
 try:
     node_align = __import__("Node Align")
@@ -51,6 +54,7 @@ class BLSL_PT_Panel(Panel):
             row.prop(gc, "text_prop", text="")
         row = row.column()
         row.operator("blsl_compiler.compile")
+        row.operator("blsl_compiler.run_tests")
 
         row = layout.row(align=True)
         row.prop(gc, "debug_ast_output")
@@ -86,9 +90,81 @@ class BLSL_OT_compile(Operator):
         if gc.debug_ast_output:
             self.dump_ast(ast)
         TyChecker(ast)
-        nodes = NodeGen(ast, context).emit()
+        nodes = NodeGen(ast, context).emit(clear=True)
         if 'node_align' in globals():
             node_align.operators.distribute_nodes(nodes, None, "HORIZONTAL")
+        return {'FINISHED'}
+
+
+class BLSL_OT_run_tests(Operator):
+    bl_idname = "blsl_compiler.run_tests"
+    bl_label = "Run Tests"
+
+    @classmethod
+    def poll(cls, context):
+        space = context.space_data
+        return hasattr(space, 'node_tree') and space.node_tree.bl_idname == 'GeometryNodeTree'
+
+    def execute(self, context):
+        addon_dir = pathlib.Path(__package__).parent
+        tests_dir = os.path.join(addon_dir, 'tests')
+        failed = 0
+        for file in pathlib.Path(tests_dir).iterdir():
+            if file.suffix != '.py':
+                continue
+
+            # skipped tests
+            match file.stem:
+                case "":
+                    continue
+
+            test_ = importlib.import_module(f'.{file.stem}', 'blsl.tests')
+            for test in test_._:
+                parser = parser_from_src(test['src'])
+                ast = parser.parse()
+                TyChecker(ast)
+                NodeGen(ast, context).emit()
+                nt = context.space_data.node_tree
+                obj = context.object
+                group_out = nt.nodes['Group Output']
+                node = nt.nodes[-1]
+                sockets = 0
+                for output in node.outputs:
+                    nt.links.new(output, group_out.inputs[-1])
+                    sock = group_out.inputs[-2]
+                    sockets += 1
+                    name = f"{sock.identifier}_attribute_name"
+                    obj.modifiers['tests'][name] = sock.name
+                    deps = context.evaluated_depsgraph_get()
+                    _obj = obj.evaluated_get(deps)
+                    __attr = _obj.data.attributes[sock.name]
+                    attr = __attr.data
+                    size = len(attr)
+                    data = None
+                    storage_type = None
+                    match ty := __attr.data_type:
+                        case 'INT':
+                            data = [0] * size
+                            storage_type = 'value'
+                        case 'FLOAT':
+                            data = [0.0] * size
+                            storage_type = 'value'
+                        case _:
+                            assert False, f"{ty}"
+                    attr.foreach_get(storage_type, data)
+                    assert len(data) == 1
+                    if data[0] != test['output'][sock.name]:
+                        print(f"  \x1b[1;31m[ERR]\x1b[0m {file}: \"{test['title']}\" failed")
+                        failed += 1
+                for sock in range(sockets):
+                    nt.outputs.remove(nt.outputs[-1])
+                nt.nodes.remove(node)
+        if failed:
+            plural = "s" if failed > 1 else ""
+            print(f"  \x1b[1;31m[ERR]\x1b[0m {failed} test{plural} failed")
+        else:
+            print("  \x1b[1;32m[OK]\x1b[0m All tests passed")
+
         return {'FINISHED'}
 
 
@@ -109,6 +185,7 @@ classes = [
     BLSL_PT_Panel,
     BLSLCompiler,
     BLSL_OT_compile,
+    BLSL_OT_run_tests,
 ]
 
 

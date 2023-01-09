@@ -15,6 +15,7 @@ class TokenKind(Enum):
     Ident = auto()
 
     Int = auto()
+    Float = auto()
     Void = auto()
     Vec4 = auto()
 
@@ -41,12 +42,14 @@ class TokenKind(Enum):
     def get_ty(self) -> TypeKind | None:
         match self:
             case TokenKind.Int: return TypeKind.Int
+            case TokenKind.Float: return TypeKind.Float
             case TokenKind.Void: return TypeKind.Void
             case TokenKind.Vec4: return TypeKind.Vec4
 
 
 keywords: Dict[str, TokenKind] = {
     'int': TokenKind.Int,
+    'float': TokenKind.Float,
     'void': TokenKind.Void,
     'vec4': TokenKind.Vec4,
     'const': TokenKind.Const,
@@ -88,18 +91,22 @@ def tokenize(src: str) -> List[Token]:
         c = src[i]
         if c.isspace():
             i += 1
-        elif c.isalpha():
+        elif c.isalpha() or c == '_':
             begin = i
-            while i < len(src) and src[i].isalnum():
+            while i < len(src) and (src[i].isalnum() or src[i] == '_') and not src[i].isspace():
                 i += 1
             add_token(TokenKind.Ident, begin, i)
         elif c.isdigit():
             begin = i
             is_float = False
-            while i < len(src) and (src[i].isdigit() or (is_float := (src[i] == '.') | is_float)):
+            while i < len(src) and (src[i].isdigit() or (is_float := (src[i] == '.') | is_float)) and not src[i].isspace():
                 i += 1
             add_token(TokenKind.FloatLit if is_float else TokenKind.IntLit, begin, i)
         elif c in punc:
+            if c == '/' and src[i + 1] == '/':
+                while src[i] != '\n':
+                    i += 1
+                continue
             add_token(punc[c], i, i + 1)
             i += 1
         else:

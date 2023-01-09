@@ -116,7 +116,12 @@ class Parser:
         return self.parse_unary()
 
     def parse_term(self) -> Expr:
-        return self.parse_factor()
+        left = self.parse_factor()
+        while self.t.kind in [TokenKind.Plus, TokenKind.Minus]:
+            kind = binary_op[self.t.kind]
+            self.eat()
+            left = Expr(Binary(left, self.parse_term(), kind))
+        return left
 
     def parse_relational_expr(self) -> Expr:
         return self.parse_term()

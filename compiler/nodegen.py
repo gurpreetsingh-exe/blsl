@@ -36,6 +36,10 @@ class NodeGen:
             case _:
                 assert False, "unreachable"
 
+    @property
+    def tree_type(self) -> str:
+        return self.nt.bl_idname
+
     def add_param(self, arg: FnArg, nt: NodeTree):
         match arg:
             case FnArg(Ident(name), Ty(kind), ty_qualifiers):
@@ -53,6 +57,15 @@ class NodeGen:
                 return node.outputs[0]
             case Ident(name):
                 return self.env.get(name)
+            case Binary(left, right, kind):
+                l = self.gen_expr(left, nt)
+                r = self.gen_expr(right, nt)
+                node = nt.add_node("ShaderNodeMath")
+                assert isinstance(node, bpy.types.ShaderNodeMath)
+                node.operation = kind.blender_op()
+                nt.link(l, node.inputs[0])
+                nt.link(r, node.inputs[1])
+                return node.outputs[0]
             case _:
                 assert False, f"{expr.kind}"
 
@@ -72,13 +85,21 @@ class NodeGen:
                 case _:
                     assert False, f"{stmt.kind}"
 
-    def emit(self):
+    def emit(self, clear=False):
         for deff in self.module.defs:
             match deff:
                 case Def(Fn(Ident(name), FnSig(args, Ty(ret_ty)), body)):
-                    self.nt.nodes.clear()
-                    nt = NodeTree(name, 'ShaderNodeTree')
-                    node = self.nt.nodes.new('ShaderNodeGroup')
+                    if clear:
+                        self.nt.nodes.clear()
+                    nt = NodeTree(name, self.tree_type)
+                    match self.tree_type:
+                        case 'ShaderNodeTree':
+                            node = self.nt.nodes.new('ShaderNodeGroup')
+                        case 'GeometryNodeTree':
+                            node = self.nt.nodes.new('GeometryNodeGroup')
+                        case _:
+                            assert False, f"{self.tree_type}"
+
                     match node:
                         case bpy.types.ShaderNodeGroup() | bpy.types.GeometryNodeGroup():
                             node.node_tree = nt._nt

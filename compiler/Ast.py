@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List
 from enum import Enum, auto
 
@@ -18,6 +19,11 @@ class TypeKind(Enum):
     def display_name(self) -> str:
         return self.name.lower()
 
+    def is_vector(self) -> bool:
+        match self:
+            case TypeKind.Vec4: return True
+            case _: return False
+
 
 class Ty:
     __match_args__ = ('kind', )
@@ -25,12 +31,25 @@ class Ty:
     def __init__(self, kind: TypeKind):
         self.kind = kind
 
+    def display_name(self) -> str:
+        return self.kind.display_name()
+
+    def is_vector(self) -> bool:
+        return self.kind.is_vector()
+
+    def __eq__(self, __o: Ty) -> bool:
+        return self.kind == __o.kind
+
+    def __ne__(self, __o: Ty) -> bool:
+        return not self.__eq__(__o)
+
 
 class Ident:
     __match_args__ = ('name', )
 
     def __init__(self, name: str):
         self.name = name
+        self.ty: Ty | None = None
 
 
 class TyQualifier:
@@ -84,8 +103,16 @@ class BinaryKind(Enum):
     Eq = auto()
     NotEq = auto()
 
+    def blender_op(self):
+        match self:
+            case BinaryKind.Add: return "ADD"
+            case BinaryKind.Sub: return "SUBTRACT"
+            case _: assert False, f"{self}"
+
 
 class Binary:
+    __match_args__ = ('left', 'right', 'kind', )
+
     def __init__(self, left: Expr, right: Expr, kind: BinaryKind):
         self.left = left
         self.right = right

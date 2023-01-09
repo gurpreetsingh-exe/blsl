@@ -1,3 +1,4 @@
+from __future__ import annotations
 import bpy
 from .Ast import TypeKind
 from typing import Dict
@@ -6,12 +7,22 @@ class NodeTree:
     def __init__(self, name: str, ty: str):
         if tree := bpy.data.node_groups.get(name):
             bpy.data.node_groups.remove(tree)
+        self.tree_type = ty
         self._nt = bpy.data.node_groups.new(type=ty, name=name)
         self._ins = NodeTreeInputs(self)
         self._outs = NodeTreeOutputs(self)
 
     def add_node(self, ty) -> bpy.types.Node:
         return self._nt.nodes.new(type=ty)
+
+    def add_group(self) -> bpy.types.Node:
+        match self.tree_type:
+            case 'ShaderNodeTree':
+                return self.add_node('ShaderNodeGroup')
+            case 'GeometryNodeTree':
+                return self.add_node('GeometryNodeGroup')
+            case _:
+                assert False, f"{self.tree_type}"
 
     def add_input(self, name: str, ty: TypeKind):
         self._ins.add_sock(name, ty)
@@ -22,6 +33,9 @@ class NodeTree:
     def link_to_output(self, name: str, sock: bpy.types.NodeSocket):
         to = self._outs.get(name)
         self._nt.links.new(sock, to)
+
+    def link(self, from_: bpy.types.NodeSocket, to: bpy.types.NodeSocket):
+        self._nt.links.new(from_, to)
 
 
 def get_blender_socket_type(ty: TypeKind) -> str:

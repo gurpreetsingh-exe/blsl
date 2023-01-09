@@ -38,7 +38,7 @@ class TyChecker:
         if ty.kind == kind:
             return True
         else:
-            assert False, f"expected `{ty.kind.display_name()}` found `{kind.display_name()}`"
+            assert False, f"expected `{ty.display_name()}` found `{kind.display_name()}`"
 
     def find_var(self, name: str) -> Ty:
         ty = self.ty_env.get(name)
@@ -46,6 +46,9 @@ class TyChecker:
             return ty
         else:
             assert False, f"`{name}` is not defined"
+
+    def expect_ty(self, expected_ty: Ty, found_ty: Ty):
+        return f"expected `{expected_ty.display_name()}` found `{found_ty.display_name()}`"
 
     def check(self, expr: Expr, expected_ty: Ty):
         match expr.kind:
@@ -56,6 +59,21 @@ class TyChecker:
             case Ident(name):
                 ty = self.find_var(name)
                 self.assert_eq(expected_ty, ty.kind)
+                expr.kind.ty = expected_ty
+            case Binary(left, right, kind):
+                left_ty = self.infer(left)
+                right_ty = self.infer(right)
+                match left_ty.is_vector(), right_ty.is_vector():
+                    case True, True:
+                        assert left_ty == right_ty, f"`{kind}` is not implemented for `{left_ty.display_name()}` and `{right_ty.display_name()}`"
+                        assert expected_ty == left_ty, self.expect_ty(expected_ty, left_ty)
+                    case True, False:
+                        assert expected_ty == left_ty, self.expect_ty(expected_ty, left_ty)
+                    case False, True:
+                        assert expected_ty == right_ty, self.expect_ty(expected_ty, right_ty)
+                    case _, _:
+                        pass
+                expr.kind.ty = expected_ty
             case _:
                 assert False, f"{expr.kind}"
 
@@ -67,6 +85,10 @@ class TyChecker:
                 return Ty(TypeKind.Float)
             case Ident(name):
                 return self.find_var(name)
+            case Binary(left, right, kind):
+                if (l := self.infer(left)) != (r := self.infer(right)):
+                    assert False, f'{kind} is not implement for `{l}` and `{r}`'
+                return l
             case _:
                 assert False, f"{expr.kind}"
 
