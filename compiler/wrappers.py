@@ -46,11 +46,11 @@ class NodeTree:
             case _:
                 assert False, f"{self.tree_type}"
 
-    def add_input(self, name: str, ty: TypeKind):
-        self._ins.add_sock(name, ty)
+    def add_input(self, name: str, ty: TypeKind) -> bpy.types.NodeSocket:
+        return self._ins.add_sock(name, ty)
 
-    def add_output(self, name: str, ty: TypeKind):
-        self._outs.add_sock(name, ty)
+    def add_output(self, name: str, ty: TypeKind) -> bpy.types.NodeSocket:
+        return self._outs.add_sock(name, ty)
 
     def link_to_output(self, name: str, sock: bpy.types.NodeSocket):
         to = self._outs.get(name)
@@ -64,7 +64,7 @@ class NodeTree:
                         to.default_value = data
                     case _:
                         assert False, kind
-            case bpy.types.NodeSocket():
+            case _:
                 self._nt.links.new(from_, to)
 
 
@@ -85,8 +85,9 @@ class NodeTreeInputs:
         self._grp_in = nt.add_node('NodeGroupInput')
         self._in = nt._nt.inputs
 
-    def add_sock(self, name: str, ty: TypeKind):
+    def add_sock(self, name: str, ty: TypeKind) -> bpy.types.NodeSocket:
         self._in.new(type=get_blender_socket_type(ty), name=name)
+        return self.get(name)
 
     def get(self, name: str) -> bpy.types.NodeSocket:
         return self._grp_in.outputs[name]
@@ -97,8 +98,9 @@ class NodeTreeOutputs:
         self._grp_out = nt.add_node('NodeGroupOutput')
         self._out = nt._nt.outputs
 
-    def add_sock(self, name: str, ty: TypeKind):
+    def add_sock(self, name: str, ty: TypeKind) -> bpy.types.NodeSocket:
         self._out.new(type=get_blender_socket_type(ty), name=name)
+        return self.get(name)
 
     def get(self, name: str) -> bpy.types.NodeSocket:
         return self._grp_out.inputs[name]

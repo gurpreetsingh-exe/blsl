@@ -113,8 +113,9 @@ class NodeGen:
                 for qual in ty_qualifiers:
                     if qual.is_output():
                         nt.add_output(name, kind)
-                        break
-                nt.add_input(name, kind)
+                    break
+                sock = nt.add_input(name, kind)
+                self.env.bind(name, sock)
 
     def gen_expr(self, expr: Expr, nt: NodeTree) -> bpy.types.NodeSocket | Value:
         match expr.kind:
@@ -168,7 +169,7 @@ class NodeGen:
                         case Value(_, data):
                             sock = nt._outs.get('ret')
                             sock.default_value = data
-                        case bpy.types.NodeSocket():
+                        case _:
                             nt.link_to_output('ret', sock_out)
                 case _:
                     assert False, f"{stmt.kind}"

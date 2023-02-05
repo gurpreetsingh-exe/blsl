@@ -157,6 +157,8 @@ class TyChecker:
             case Return(expr):
                 assert self.fn != None
                 self.check(expr, self.fn.ret_ty)
+            case _:
+                assert False, stmt.kind
 
     def visit_block(self, block: Block):
         tmp_env = self.ty_env
