@@ -40,6 +40,8 @@ class Ty:
         return self.kind.is_vector()
 
     def __eq__(self, __o: Ty) -> bool:
+        if __o == None:
+            return False
         return self.kind == __o.kind
 
     def __ne__(self, __o: Ty) -> bool:

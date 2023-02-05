@@ -141,7 +141,36 @@ class TyChecker:
             case Binary(left, right, kind):
                 if (l := self.infer(left)) != (r := self.infer(right)):
                     assert False, f'{kind} is not implement for `{l}` and `{r}`'
+                expr.kind.ty = l
                 return l
+            case Call(name, args):
+                if name in builtins:
+                    fns = builtins[name]
+                    matches = False
+
+                    i = 0
+                    for i, fn in enumerate(fns):
+                        if len(args) != len(fn.args):
+                            continue
+
+                        args_match = 0
+                        for arg, exp_ty in zip(args, fn.args):
+                            args_match += self.infer(arg) == exp_ty
+
+                        if args_match != len(args):
+                            continue
+
+                        matches = True
+                        break
+
+                    if not matches:
+                        assert False, f"no matching function call for `{name}`"
+                    expr.kind.sig = i
+                    return fns[i].ret_ty
+
+                elif name in self.ty_env.fns:
+                    print("fn:", self.ty_env.fns[name])
+                    assert False
             case _:
                 assert False, f"{expr.kind}"
 

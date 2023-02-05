@@ -36,4 +36,15 @@ _ = [
             'ret': 63.33333206176758
         }
     },
+    {
+        'title': "vector math",
+        'src': """vec2 test() {
+            vec2 a = vec2(1.0, 2.0);
+            vec2 b = vec2(2.0) * 2.0;
+            return a * b + vec2(2.0);
+        }""",
+        'output': {
+            'ret': [6.0, 10.0, 0.0]
+        }
+    },
 ]

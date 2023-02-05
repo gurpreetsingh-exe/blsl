@@ -34,7 +34,9 @@ class NodeTree:
         for inp in node.inputs:
             if type(inp) == bpy.types.NodeSocketVirtual:
                 continue
-            inp.default_value = 0.0
+            match inp.default_value:
+                case float():
+                    inp.default_value = 0.0
         return node
 
     def add_group(self) -> bpy.types.Node:
@@ -61,7 +63,10 @@ class NodeTree:
             case Value(kind, data):
                 match kind:
                     case ValueKind.Int | ValueKind.Float:
-                        to.default_value = data
+                        if to.type == 'VECTOR':
+                            to.default_value = [data] * 3
+                        else:
+                            to.default_value = data
                     case _:
                         assert False, kind
             case _:

@@ -89,9 +89,9 @@ class BLSL_OT_compile(Operator):
             assert False
 
         ast = parser.parse()
+        TyChecker(ast)
         if gc.debug_ast_output:
             self.dump_ast(ast)
-        TyChecker(ast)
         nodes = NodeGen(ast, context).emit(clear=True)
         if 'node_align' in globals():
             node_align.operators.distribute_nodes(nodes, None, "HORIZONTAL")

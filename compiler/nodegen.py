@@ -126,10 +126,17 @@ class NodeGen:
             case Ident(name):
                 return self.env.get(name)
             case Binary(left, right, kind):
+                assert expr.kind.ty != None
                 l = self.gen_expr(left, nt)
                 r = self.gen_expr(right, nt)
-                node = nt.add_node("ShaderNodeMath")
-                assert isinstance(node, bpy.types.ShaderNodeMath)
+                ntype = None
+                if expr.kind.ty.is_vector():
+                    node = nt.add_node("ShaderNodeVectorMath")
+                    ntype = bpy.types.ShaderNodeVectorMath
+                else:
+                    node = nt.add_node("ShaderNodeMath")
+                    ntype = bpy.types.ShaderNodeMath
+                assert isinstance(node, ntype)
                 node.operation = kind.blender_op()
                 nt.link(l, node.inputs[0])
                 nt.link(r, node.inputs[1])
