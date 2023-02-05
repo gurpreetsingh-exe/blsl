@@ -14,6 +14,8 @@ class TypeKind(Enum):
     Int = auto()
     Float = auto()
     Void = auto()
+    Vec2 = auto()
+    Vec3 = auto()
     Vec4 = auto()
 
     def display_name(self) -> str:
@@ -21,7 +23,7 @@ class TypeKind(Enum):
 
     def is_vector(self) -> bool:
         match self:
-            case TypeKind.Vec4: return True
+            case TypeKind.Vec4 | TypeKind.Vec3 | TypeKind.Vec2: return True
             case _: return False
 
 
@@ -140,6 +142,15 @@ class Float:
         self.value = value
 
 
+class Call:
+    __match_args__ = ('name', 'args', )
+
+    def __init__(self, name: str, args: List[Expr]):
+        self.name = name
+        self.args = args
+        self.sig: int | None = None
+
+
 class Decl:
     __match_args__ = ('name', 'ty', 'init', )
 
@@ -164,11 +175,9 @@ class Return:
 
 
 class Stmt:
-    def __init__(self, kind: \
-            ExprStmt \
-            | Decl \
-            | Return \
-    ):
+    def __init__(self, kind: ExprStmt
+                 | Decl
+                 | Return):
         self.kind = kind
 
 

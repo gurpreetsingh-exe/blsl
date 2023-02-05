@@ -1,7 +1,24 @@
 from __future__ import annotations
 import bpy
 from .Ast import TypeKind
-from typing import Dict
+from enum import Enum, auto
+
+
+class ValueKind(Enum):
+    Float = auto()
+    Int = auto()
+    Vector2 = auto()
+    Vector3 = auto()
+    Vector4 = auto()
+
+
+class Value:
+    __match_args__ = ('kind', 'data', )
+
+    def __init__(self, kind, data):
+        self.kind = kind
+        self.data = data
+
 
 class NodeTree:
     def __init__(self, name: str, ty: str):
@@ -34,8 +51,16 @@ class NodeTree:
         to = self._outs.get(name)
         self._nt.links.new(sock, to)
 
-    def link(self, from_: bpy.types.NodeSocket, to: bpy.types.NodeSocket):
-        self._nt.links.new(from_, to)
+    def link(self, from_: Value | bpy.types.NodeSocket, to: bpy.types.NodeSocket):
+        match from_:
+            case Value(kind, data):
+                match kind:
+                    case ValueKind.Int | ValueKind.Float:
+                        to.default_value = data
+                    case _:
+                        assert False, kind
+            case bpy.types.NodeSocket():
+                self._nt.links.new(from_, to)
 
 
 def get_blender_socket_type(ty: TypeKind) -> str:
@@ -46,7 +71,7 @@ def get_blender_socket_type(ty: TypeKind) -> str:
             return "NodeSocketInt"
         case TypeKind.Float:
             return "NodeSocketFloat"
-        case TypeKind.Vec4:
+        case TypeKind.Vec4 | TypeKind.Vec3 | TypeKind.Vec2:
             return "NodeSocketVector"
 
 
@@ -61,6 +86,7 @@ class NodeTreeInputs:
     def get(self, name: str) -> bpy.types.NodeSocket:
         return self._grp_in.outputs[name]
 
+
 class NodeTreeOutputs:
     def __init__(self, nt: NodeTree):
         self._grp_out = nt.add_node('NodeGroupOutput')
@@ -71,4 +97,3 @@ class NodeTreeOutputs:
 
     def get(self, name: str) -> bpy.types.NodeSocket:
         return self._grp_out.inputs[name]
-

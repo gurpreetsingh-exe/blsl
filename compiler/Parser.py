@@ -102,6 +102,26 @@ class Parser:
                         assert False, "function call"
                     case _:
                         return Expr(self.parse_ident())
+            case TokenKind.Int \
+                    | TokenKind.Float \
+                    | TokenKind.Vec2 \
+                    | TokenKind.Vec3 \
+                    | TokenKind.Vec4:
+                ident = self.t.value
+                self.eat()
+                self.expect(TokenKind.LParen)
+                args: List[Expr] = []
+                while self.t and self.t.kind != TokenKind.RParen:
+                    args.append(self.parse_expr())
+                    match self.t.kind:
+                        case TokenKind.Comma:
+                            self.eat()
+                        case TokenKind.RParen:
+                            break
+                        case _:
+                            assert False, f"expected one of `}}` or `,`, got `{self.t.kind}`"
+                self.expect(TokenKind.RParen)
+                return Expr(Call(ident, args))
             case TokenKind.IntLit:
                 return Expr(Int(self.expect(TokenKind.IntLit).value))
             case TokenKind.FloatLit:

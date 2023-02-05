@@ -1,3 +1,18 @@
+import importlib
+import pathlib
+import os
+from beeprint import pp
+from .compiler.typechk import TyChecker
+from .compiler.nodegen import NodeGen
+from .compiler.Parser import parser_from_src, parser_from_file
+import bpy
+from bpy.types import (
+    Panel,
+    Operator,
+    PropertyGroup,
+    WindowManager)
+import numpy as np
+
 bl_info = {
     "name": "BLSL Compiler",
     "category": "Node",
@@ -5,25 +20,12 @@ bl_info = {
     "version": (0, 0, 1),
 }
 
-import bpy
-from bpy.types import (
-    Panel,
-    Operator,
-    PropertyGroup,
-    WindowManager)
-
-from .compiler.Parser import parser_from_src, parser_from_file
-from .compiler.nodegen import NodeGen
-from .compiler.typechk import TyChecker
-from beeprint import pp
-import os
-import pathlib
-import importlib
 
 try:
     node_align = __import__("Node Align")
 except ImportError:
     print("\"Node Align\" not found, nodes will not be aligned")
+
 
 class BLSL_PT_Panel(Panel):
     bl_idname = "BLSL_PT_Panel"
@@ -108,7 +110,10 @@ class BLSL_OT_run_tests(Operator):
     def execute(self, context):
         addon_dir = pathlib.Path(__package__).parent
         tests_dir = os.path.join(addon_dir, 'tests')
+        passed = 0
         failed = 0
+        skipped = 0
+        print()
         for file in pathlib.Path(tests_dir).iterdir():
             if file.suffix != '.py':
                 continue
@@ -120,6 +125,12 @@ class BLSL_OT_run_tests(Operator):
 
             test_ = importlib.import_module(f'.{file.stem}', 'blsl.tests')
             for test in test_._:
+                if test.get('skip', False):
+                    skipped += 1
+                    print(
+                        f"\x1b[1;33m[WARN]\x1b[0m {file}: \"{test['title']}\" skipped")
+                    continue
+
                 parser = parser_from_src(test['src'])
                 ast = parser.parse()
                 TyChecker(ast)
@@ -149,21 +160,36 @@ class BLSL_OT_run_tests(Operator):
                         case 'FLOAT':
                             data = [0.0] * size
                             storage_type = 'value'
+                        case 'FLOAT_VECTOR':
+                            size *= 3
+                            data = [0.0] * size
+                            storage_type = 'vector'
                         case _:
                             assert False, f"{ty}"
                     attr.foreach_get(storage_type, data)
-                    assert len(data) == 1
+                    assert len(data) == size
+                    if storage_type == 'vector':
+                        data = np.reshape(data, (1, 3)).tolist()
                     if data[0] != test['output'][sock.name]:
-                        print(f"  \x1b[1;31m[ERR]\x1b[0m {file}: \"{test['title']}\" failed")
+                        print(
+                            f"\x1b[1;31m[ERR]\x1b[0m {file}: \"{test['title']}\" failed")
                         failed += 1
+                    else:
+                        passed += 1
                 for sock in range(sockets):
                     nt.outputs.remove(nt.outputs[-1])
                 nt.nodes.remove(node)
+        print()
         if failed:
             plural = "s" if failed > 1 else ""
-            print(f"  \x1b[1;31m[ERR]\x1b[0m {failed} test{plural} failed")
+            print(
+                f"  \x1b[1;31m[ERR]\x1b[0m {failed} test{plural} failed", end="")
         else:
-            print("  \x1b[1;32m[OK]\x1b[0m All tests passed")
+            print(f"  \x1b[1;32m[OK]\x1b[0m {passed} tests passed", end="")
+        if skipped:
+            print(f", {skipped} skipped")
+        else:
+            print()
 
         return {'FINISHED'}
 
@@ -175,10 +201,12 @@ class BLSLCompiler(PropertyGroup):
     ])
 
     text_prop: bpy.props.PointerProperty(type=bpy.types.Text)
-    filepath: bpy.props.StringProperty(name="Source file", subtype="FILE_PATH", default="")
+    filepath: bpy.props.StringProperty(
+        name="Source file", subtype="FILE_PATH", default="")
 
     debug_ast_output: bpy.props.BoolProperty(name="AST output", default=False)
-    debug_token_output: bpy.props.BoolProperty(name="Token output", default=False)
+    debug_token_output: bpy.props.BoolProperty(
+        name="Token output", default=False)
 
 
 classes = [

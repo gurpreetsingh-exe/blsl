@@ -3,6 +3,28 @@ from typing import Dict
 from .Ast import *
 
 
+class Sig:
+    def __init__(self, args: List[Ty], ret_ty: Ty) -> None:
+        self.args = args
+        self.ret_ty = ret_ty
+
+
+builtins = {
+    'vec4': [
+        Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec4)),
+        Sig([Ty(TypeKind.Float)] * 4, Ty(TypeKind.Vec4)),
+    ],
+    'vec3': [
+        Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec3)),
+        Sig([Ty(TypeKind.Float)] * 3, Ty(TypeKind.Vec3)),
+    ],
+    'vec2': [
+        Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec2)),
+        Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Vec2)),
+    ],
+}
+
+
 class TyEnv:
     def __init__(self, paren_env: TyEnv | None = None) -> None:
         self.parent: TyEnv | None = paren_env
@@ -66,14 +88,45 @@ class TyChecker:
                 match left_ty.is_vector(), right_ty.is_vector():
                     case True, True:
                         assert left_ty == right_ty, f"`{kind}` is not implemented for `{left_ty.display_name()}` and `{right_ty.display_name()}`"
-                        assert expected_ty == left_ty, self.expect_ty(expected_ty, left_ty)
+                        assert expected_ty == left_ty, self.expect_ty(
+                            expected_ty, left_ty)
                     case True, False:
-                        assert expected_ty == left_ty, self.expect_ty(expected_ty, left_ty)
+                        assert expected_ty == left_ty, self.expect_ty(
+                            expected_ty, left_ty)
                     case False, True:
-                        assert expected_ty == right_ty, self.expect_ty(expected_ty, right_ty)
+                        assert expected_ty == right_ty, self.expect_ty(
+                            expected_ty, right_ty)
                     case _, _:
                         pass
                 expr.kind.ty = expected_ty
+            case Call(name, args):
+                if name in builtins:
+                    fns = builtins[name]
+                    matches = False
+
+                    i = 0
+                    for i, fn in enumerate(fns):
+                        if len(args) != len(fn.args):
+                            continue
+
+                        args_match = 0
+                        for arg, exp_ty in zip(args, fn.args):
+                            args_match += self.infer(arg) == exp_ty
+
+                        if args_match != len(args):
+                            continue
+                        if expected_ty != fn.ret_ty:
+                            continue
+
+                        matches = True
+                        break
+
+                    if not matches:
+                        assert False, f"no matching function call for `{name}`"
+                    expr.kind.sig = i
+
+                elif name in self.ty_env.fns:
+                    print("fn:", self.ty_env.fns[name])
             case _:
                 assert False, f"{expr.kind}"
 
@@ -126,4 +179,3 @@ class TyChecker:
                     self.fn = sig
                     self.ty_env.def_fn(name, sig)
                     self.visit_block(body)
-
