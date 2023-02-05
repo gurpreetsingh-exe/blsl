@@ -127,13 +127,18 @@ class Parser:
             case TokenKind.FloatLit:
                 return Expr(Float(self.expect(TokenKind.FloatLit).value))
             case _:
-                assert False, "not implemented"
+                assert False, f"{self.t.kind}, not implemented"
 
     def parse_unary(self) -> Expr:
         return self.parse_primary()
 
     def parse_factor(self) -> Expr:
-        return self.parse_unary()
+        left = self.parse_unary()
+        while self.t.kind in [TokenKind.Asterisk, TokenKind.Slash]:
+            kind = binary_op[self.t.kind]
+            self.eat()
+            left = Expr(Binary(left, self.parse_factor(), kind))
+        return left
 
     def parse_term(self) -> Expr:
         left = self.parse_factor()

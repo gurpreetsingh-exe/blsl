@@ -30,7 +30,12 @@ class NodeTree:
         self._outs = NodeTreeOutputs(self)
 
     def add_node(self, ty) -> bpy.types.Node:
-        return self._nt.nodes.new(type=ty)
+        node = self._nt.nodes.new(type=ty)
+        for inp in node.inputs:
+            if type(inp) == bpy.types.NodeSocketVirtual:
+                continue
+            inp.default_value = 0.0
+        return node
 
     def add_group(self) -> bpy.types.Node:
         match self.tree_type:

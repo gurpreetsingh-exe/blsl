@@ -132,6 +132,13 @@ class NodeGen:
                 node.operation = kind.blender_op()
                 nt.link(l, node.inputs[0])
                 nt.link(r, node.inputs[1])
+                match kind:
+                    case BinaryKind.NotEq:
+                        out = nt.add_node("ShaderNodeMath")
+                        out.operation = "SUBTRACT"
+                        nt.link(Value(ValueKind.Int, 1), out.inputs[0])
+                        nt.link(node.outputs[0], out.inputs[1])
+                        node = out
                 return node.outputs[0]
             case Call(name, args):
                 assert expr.kind.sig != None

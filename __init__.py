@@ -170,9 +170,12 @@ class BLSL_OT_run_tests(Operator):
                     assert len(data) == size
                     if storage_type == 'vector':
                         data = np.reshape(data, (1, 3)).tolist()
-                    if data[0] != test['output'][sock.name]:
+                    expected = test['output'][sock.name]
+                    if data[0] != expected:
                         print(
                             f"\x1b[1;31m[ERR]\x1b[0m {file}: \"{test['title']}\" failed")
+                        print(f"    expected: {expected}")
+                        print(f"    output: {data[0]}")
                         failed += 1
                     else:
                         passed += 1

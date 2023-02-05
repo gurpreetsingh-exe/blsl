@@ -40,6 +40,7 @@ class TokenKind(Enum):
     Asterisk = auto()
     Slash = auto()
     Period = auto()
+    Bang = auto()
     EqEq = auto()
     NotEq = auto()
 
@@ -81,6 +82,7 @@ punc: Dict[str, TokenKind] = {
     '*': TokenKind.Asterisk,
     '/': TokenKind.Slash,
     '.': TokenKind.Period,
+    '!': TokenKind.Bang,
     '==': TokenKind.EqEq,
     '!=': TokenKind.NotEq,
 }
@@ -98,6 +100,11 @@ def tokenize(src: str) -> List[Token]:
     4
     >>> [token.kind.name for token in tokens]
     ['Ident', 'Period', 'IntLit', 'FloatLit']
+    >>> tokens = tokenize("10 == 20 != 50")
+    >>> len(tokens)
+    5
+    >>> [token.kind.name for token in tokens]
+    ['IntLit', 'EqEq', 'IntLit', 'NotEq', 'IntLit']
     >>>
     """
 
@@ -136,7 +143,19 @@ def tokenize(src: str) -> List[Token]:
                 while src[i] != '\n':
                     i += 1
                 continue
-            add_token(punc[c], i, i + 1)
+            i += 1
+            prev = c
+            if i >= len(src):
+                add_token(punc[prev], i - 1, i)
+                break
+
+            c = src[i]
+            comp = prev + c
+            if comp in punc:
+                add_token(punc[comp], i - 1, i + 1)
+            else:
+                i -= 1
+                add_token(punc[prev], i, i + 1)
             i += 1
         else:
             i += 1

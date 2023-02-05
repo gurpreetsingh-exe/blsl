@@ -109,6 +109,9 @@ class BinaryKind(Enum):
         match self:
             case BinaryKind.Add: return "ADD"
             case BinaryKind.Sub: return "SUBTRACT"
+            case BinaryKind.Mul: return "MULTIPLY"
+            case BinaryKind.Div: return "DIVIDE"
+            case BinaryKind.Eq | BinaryKind.NotEq: return "COMPARE"
             case _: assert False, f"{self}"
 
 
