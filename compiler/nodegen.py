@@ -65,11 +65,30 @@ def gen_vec2(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -
             assert False
 
 
+def gen_length(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy.types.Node:
+    node = nt.add_node('ShaderNodeVectorMath')
+    assert isinstance(node, bpy.types.ShaderNodeVectorMath)
+    node.operation = 'LENGTH'
+    nt.link(args[0], node.inputs[0])
+    return node
+
+
 builtins = {
     'vec4': gen_vec4,
     'vec3': gen_vec3,
     'vec2': gen_vec2,
+    'length': gen_length,
 }
+
+
+def n_out(node: bpy.types.Node) -> bpy.types.NodeSocket:
+    visible_outputs = [output for output in node.outputs if output.enabled]
+    return visible_outputs[0]
+
+
+def n_in(node: bpy.types.Node) -> bpy.types.NodeSocket:
+    visible_inputs = [input for input in node.inputs if input.enabled]
+    return visible_inputs[0]
 
 
 class Env:
@@ -165,9 +184,9 @@ class NodeGen:
                         out = nt.add_node("ShaderNodeMath")
                         out.operation = "SUBTRACT"
                         nt.link(Value(ValueKind.Int, 1), out.inputs[0])
-                        nt.link(node.outputs[0], out.inputs[1])
+                        nt.link(n_out(node), out.inputs[1])
                         node = out
-                return node.outputs[0]
+                return n_out(node)
             case Call(name, args):
                 assert expr.kind.sig != None
                 if name in builtins:
@@ -176,7 +195,7 @@ class NodeGen:
                 else:
                     node = nt.add_group()
                     node.node_tree = bpy.data.node_groups.get(name)
-                return node.outputs[0]
+                return n_out(node)
             case _:
                 assert False, f"{expr.kind}"
 

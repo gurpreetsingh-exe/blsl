@@ -140,6 +140,13 @@ class BLSL_OT_run_tests(Operator):
                 group_out = nt.nodes['Group Output']
                 node = nt.nodes[-1]
                 sockets = 0
+
+                if 'input' in test:
+                    for key, value in test['input'].items():
+                        node.inputs[key].default_value = value
+
+                assert len(test['output'].items()) == len(node.outputs)
+
                 for output in node.outputs:
                     nt.links.new(output, group_out.inputs[-1])
                     sock = group_out.inputs[-2]

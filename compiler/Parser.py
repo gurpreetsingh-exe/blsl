@@ -91,6 +91,23 @@ class Parser:
         self.expect(TokenKind.RParen)
         return args
 
+    def parse_call(self) -> Call:
+        ident = self.t.value
+        self.eat()
+        self.expect(TokenKind.LParen)
+        args: List[Expr] = []
+        while self.t and self.t.kind != TokenKind.RParen:
+            args.append(self.parse_expr())
+            match self.t.kind:
+                case TokenKind.Comma:
+                    self.eat()
+                case TokenKind.RParen:
+                    break
+                case _:
+                    assert False, f"expected one of `}}` or `,`, got `{self.t.kind}`"
+        self.expect(TokenKind.RParen)
+        return Call(ident, args)
+
     def parse_primary(self) -> Expr:
         match self.t.kind:
             case TokenKind.Ident:
@@ -99,7 +116,7 @@ class Parser:
                     assert False, "unexpected eof"
                 match next.kind:
                     case TokenKind.LParen:
-                        assert False, "function call"
+                        return Expr(self.parse_call())
                     case _:
                         return Expr(self.parse_ident())
             case TokenKind.Int \
@@ -107,21 +124,7 @@ class Parser:
                     | TokenKind.Vec2 \
                     | TokenKind.Vec3 \
                     | TokenKind.Vec4:
-                ident = self.t.value
-                self.eat()
-                self.expect(TokenKind.LParen)
-                args: List[Expr] = []
-                while self.t and self.t.kind != TokenKind.RParen:
-                    args.append(self.parse_expr())
-                    match self.t.kind:
-                        case TokenKind.Comma:
-                            self.eat()
-                        case TokenKind.RParen:
-                            break
-                        case _:
-                            assert False, f"expected one of `}}` or `,`, got `{self.t.kind}`"
-                self.expect(TokenKind.RParen)
-                return Expr(Call(ident, args))
+                return Expr(self.parse_call())
             case TokenKind.IntLit:
                 return Expr(Int(self.expect(TokenKind.IntLit).value))
             case TokenKind.FloatLit:

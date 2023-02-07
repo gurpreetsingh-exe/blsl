@@ -22,6 +22,10 @@ builtins = {
         Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec2)),
         Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Vec2)),
     ],
+    'length': [
+        Sig([Ty(TypeKind.Vec2)], Ty(TypeKind.Float)),
+        Sig([Ty(TypeKind.Vec3)], Ty(TypeKind.Float)),
+    ]
 }
 
 
