@@ -1,6 +1,6 @@
 from __future__ import annotations
 import bpy
-from .Ast import TypeKind
+from .Ast import TypeKind, Ty
 from enum import Enum, auto
 
 
@@ -18,6 +18,16 @@ class Value:
     def __init__(self, kind, data):
         self.kind = kind
         self.data = data
+
+
+def align(l):
+    match len(l):
+        case 3:
+            return l
+        case 2:
+            return l + [0]
+        case 1:
+            return l + [0, 0]
 
 
 class NodeTree:
@@ -58,13 +68,17 @@ class NodeTree:
         to = self._outs.get(name)
         self._nt.links.new(sock, to)
 
-    def link(self, from_: Value | bpy.types.NodeSocket, to: bpy.types.NodeSocket):
+    def link(self, from_: Value | bpy.types.NodeSocket, to: bpy.types.NodeSocket, ty: Ty | None = None):
         match from_:
             case Value(kind, data):
                 match kind:
                     case ValueKind.Int | ValueKind.Float:
                         if to.type == 'VECTOR':
-                            to.default_value = [data] * 3
+                            if ty and ty.is_vector():
+                                to.default_value = align(
+                                    [data] * ty.get_size())
+                            else:
+                                to.default_value = [data] * 3
                         else:
                             to.default_value = data
                     case _:

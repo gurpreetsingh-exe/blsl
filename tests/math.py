@@ -47,4 +47,15 @@ _ = [
             'ret': [6.0, 10.0, 0.0]
         }
     },
+    {
+        'title': "vector and scalar ops",
+        'src': """vec2 test() {
+            vec2 a = vec2(1.0, 2.0);
+            return a + 0.5 - vec2(0.1, 0.2);
+        }""",
+        # blender precision :kekw:
+        'output': {
+            'ret': [1.399999976158142, 2.299999952316284, 0.0]
+        }
+    },
 ]

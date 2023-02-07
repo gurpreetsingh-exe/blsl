@@ -24,7 +24,7 @@ bl_info = {
 try:
     node_align = __import__("Node Align")
 except ImportError:
-    print("\"Node Align\" not found, nodes will not be aligned")
+    print("\"Node Align\" not found")
 
 
 class BLSL_PT_Panel(Panel):

@@ -139,10 +139,16 @@ class TyChecker:
             case Ident(name):
                 return self.find_var(name)
             case Binary(left, right, kind):
-                if (l := self.infer(left)) != (r := self.infer(right)):
-                    assert False, f'{kind} is not implement for `{l}` and `{r}`'
-                expr.kind.ty = l
-                return l
+                left_ty = self.infer(left)
+                right_ty = self.infer(right)
+                if left_ty.is_vector() and right_ty.is_vector():
+                    assert left_ty == right_ty, f"`{kind}` is not implemented for `{left_ty.display_name()}` and `{right_ty.display_name()}`"
+                if left_ty.is_vector():
+                    expr.kind.ty = left_ty
+                    return left_ty
+                else:
+                    expr.kind.ty = right_ty
+                    return right_ty
             case Call(name, args):
                 if name in builtins:
                     fns = builtins[name]

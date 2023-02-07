@@ -138,8 +138,8 @@ class NodeGen:
                     ntype = bpy.types.ShaderNodeMath
                 assert isinstance(node, ntype)
                 node.operation = kind.blender_op()
-                nt.link(l, node.inputs[0])
-                nt.link(r, node.inputs[1])
+                nt.link(l, node.inputs[0], expr.kind.ty)
+                nt.link(r, node.inputs[1], expr.kind.ty)
                 match kind:
                     case BinaryKind.NotEq:
                         out = nt.add_node("ShaderNodeMath")

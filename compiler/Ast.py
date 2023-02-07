@@ -26,6 +26,12 @@ class TypeKind(Enum):
             case TypeKind.Vec4 | TypeKind.Vec3 | TypeKind.Vec2: return True
             case _: return False
 
+    def get_size(self) -> int:
+        match self:
+            case TypeKind.Vec3 | TypeKind.Vec4: return 3
+            case TypeKind.Vec2: return 2
+            case _: return 0
+
 
 class Ty:
     __match_args__ = ('kind', )
@@ -38,6 +44,9 @@ class Ty:
 
     def is_vector(self) -> bool:
         return self.kind.is_vector()
+
+    def get_size(self) -> int:
+        return self.kind.get_size()
 
     def __eq__(self, __o: Ty) -> bool:
         if __o == None:
