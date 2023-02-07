@@ -207,15 +207,15 @@ class Parser:
             self.eat()
             return Stmt(Return(self.parse_expr()))
         else:
-            stmt = None
-            if stmt := self.parse_expr_stmt() and stmt and stmt.exprs:
+            stmt = self.parse_expr_stmt()
+            if stmt.exprs:
                 return Stmt(stmt)
 
     def parse_block(self) -> Block:
         self.expect(TokenKind.LBrace)
         stmts: List[Stmt] = []
         while self.t and self.t.kind != TokenKind.RBrace:
-            if stmt := self.parse_stmt():
+            if (stmt := self.parse_stmt()) != None:
                 stmts.append(stmt)
         self.expect(TokenKind.RBrace)
         return Block(stmts)

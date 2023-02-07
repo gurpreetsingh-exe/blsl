@@ -74,6 +74,8 @@ class TyChecker:
 
     def check(self, expr: Expr, expected_ty: Ty):
         match expr.kind:
+            case Assign(left, init):
+                self.check(init, expected_ty)
             case Int():
                 self.assert_eq(expected_ty, TypeKind.Int)
             case Float():
@@ -132,6 +134,10 @@ class TyChecker:
 
     def infer(self, expr: Expr) -> Ty:
         match expr.kind:
+            case Assign(left, init):
+                ty = self.infer(left)
+                self.check(init, ty)
+                return Ty(TypeKind.Void)
             case Int():
                 return Ty(TypeKind.Int)
             case Float():
@@ -177,8 +183,10 @@ class TyChecker:
                 elif name in self.ty_env.fns:
                     print("fn:", self.ty_env.fns[name])
                     assert False
+                else:
+                    assert False
             case _:
-                assert False, f"{expr.kind}"
+                assert False, type(expr.kind)
 
     def visit_stmt(self, stmt: Stmt):
         match stmt.kind:

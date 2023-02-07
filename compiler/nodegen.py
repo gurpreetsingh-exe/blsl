@@ -75,15 +75,22 @@ builtins = {
 class Env:
     def __init__(self, paren_env: Env | None = None):
         self.parent: Env | None = paren_env
-        self.bindings: Dict[str, bpy.types.NodeSocket] = {}
+        self.bindings: Dict[str, Value | bpy.types.NodeSocket] = {}
         self.ctx: FnSig | None = None
+        self.outputs: Dict[str, Value | bpy.types.NodeSocket] = {}
 
-    def bind(self, name: str, sock: bpy.types.NodeSocket):
+    def bind(self, name: str, sock: Value | bpy.types.NodeSocket):
         if name in self.bindings:
             assert False, f"`{name}` is already defined"
         self.bindings[name] = sock
 
-    def get(self, name: str) -> bpy.types.NodeSocket:
+    def bind_output(self, name: str, sock: Value | bpy.types.NodeSocket):
+        self.outputs[name] = sock
+
+    def set(self, name: str, sock: Value | bpy.types.NodeSocket):
+        self.bindings[name] = sock
+
+    def get(self, name: str) -> Value | bpy.types.NodeSocket:
         if name in self.bindings:
             return self.bindings[name]
         elif self.parent:
@@ -110,15 +117,28 @@ class NodeGen:
     def add_param(self, arg: FnArg, nt: NodeTree):
         match arg:
             case FnArg(Ident(name), Ty(kind), ty_qualifiers):
+                out = None
                 for qual in ty_qualifiers:
                     if qual.is_output():
-                        nt.add_output(name, kind)
+                        out = nt.add_output(name, kind)
+                        self.env.bind_output(name, out)
                     break
                 sock = nt.add_input(name, kind)
+                if out:
+                    nt.link(sock, out)
                 self.env.bind(name, sock)
 
     def gen_expr(self, expr: Expr, nt: NodeTree) -> bpy.types.NodeSocket | Value:
         match expr.kind:
+            case Assign(Expr(Ident(name)), init):
+                value = self.gen_expr(init, nt)
+                if name in self.env.outputs:
+                    sock = self.env.outputs[name]
+                    match sock:
+                        case bpy.types.NodeSocket():
+                            nt.link(value, sock)
+                self.env.set(name, value)
+                return value
             case Int(value):
                 return Value(ValueKind.Int, int(value))
             case Float(value):

@@ -104,6 +104,8 @@ class FnArg:
 
 
 class Expr:
+    __match_args__ = ('kind', )
+
     def __init__(self, kind):
         self.kind = kind
 
@@ -137,6 +139,8 @@ class Binary:
 
 
 class Assign:
+    __match_args__ = ('left', 'init', )
+
     def __init__(self, left: Expr, init: Expr):
         self.left = left
         self.init = init

@@ -71,6 +71,8 @@ class NodeTree:
     def link(self, from_: Value | bpy.types.NodeSocket, to: bpy.types.NodeSocket, ty: Ty | None = None):
         match from_:
             case Value(kind, data):
+                if to.links:
+                    self._nt.links.remove(to.links[0])
                 match kind:
                     case ValueKind.Int | ValueKind.Float:
                         if to.type == 'VECTOR':
