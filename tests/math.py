@@ -58,4 +58,21 @@ _ = [
             'ret': [1.399999976158142, 2.299999952316284, 0.0]
         }
     },
+    {
+        'title': "builtin functions",
+        'src': """float test(inout float a, inout vec2 b) {
+            a = min(a, 10.0);
+            b = max(vec2(a), vec2(100.0));
+            return length(b);
+        }""",
+        'input': {
+            'a': 20.0,
+            'b': [50.0, 50.0, 0.0],
+        },
+        'output': {
+            'a': 10.0,
+            'b': [100.0, 100.0, 0.0],
+            'ret': 141.42135620117188,
+        }
+    },
 ]

@@ -20,7 +20,7 @@ def float_to_vec4(value: Value | bpy.types.NodeSocket, nt: NodeTree) -> bpy.type
     return node
 
 
-def gen_vec4(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy.types.Node:
+def gen_vec4(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, _) -> bpy.types.Node:
     match sig:
         case 0:
             return float_to_vec4(args[0], nt)
@@ -30,7 +30,7 @@ def gen_vec4(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -
             assert False
 
 
-def gen_vec3(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy.types.Node:
+def gen_vec3(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, _) -> bpy.types.Node:
     match sig:
         case 0:
             return float_to_vec4(args[0], nt)
@@ -55,7 +55,7 @@ def vec2_to_vec2(value: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy
     return node
 
 
-def gen_vec2(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy.types.Node:
+def gen_vec2(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, _) -> bpy.types.Node:
     match sig:
         case 0:
             return float_to_vec2(args[0], nt)
@@ -65,11 +65,37 @@ def gen_vec2(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -
             assert False
 
 
-def gen_length(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy.types.Node:
+def gen_length(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, _) -> bpy.types.Node:
     node = nt.add_node('ShaderNodeVectorMath')
     assert isinstance(node, bpy.types.ShaderNodeVectorMath)
     node.operation = 'LENGTH'
     nt.link(args[0], node.inputs[0])
+    return node
+
+
+def gen_math(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
+    ntype = None
+    match sig:
+        case 0:
+            node = nt.add_node("ShaderNodeMath")
+            ntype = bpy.types.ShaderNodeMath
+        case 1 | 2:
+            node = nt.add_node("ShaderNodeVectorMath")
+            ntype = bpy.types.ShaderNodeVectorMath
+        case _:
+            assert False
+    assert isinstance(node, ntype)
+    op = None
+    match name:
+        case 'min':
+            op = 'MINIMUM'
+        case 'max':
+            op = 'MAXIMUM'
+        case _:
+            assert False
+    node.operation = op
+    for i in range(2):
+        nt.link(args[i], node.inputs[i])
     return node
 
 
@@ -78,6 +104,8 @@ builtins = {
     'vec3': gen_vec3,
     'vec2': gen_vec2,
     'length': gen_length,
+    'min': gen_math,
+    'max': gen_math,
 }
 
 
@@ -191,7 +219,7 @@ class NodeGen:
                 assert expr.kind.sig != None
                 if name in builtins:
                     gen_args = [self.gen_expr(arg, nt) for arg in args]
-                    node = builtins[name](expr.kind.sig, gen_args, nt)
+                    node = builtins[name](expr.kind.sig, gen_args, nt, name)
                 else:
                     node = nt.add_group()
                     node.node_tree = bpy.data.node_groups.get(name)

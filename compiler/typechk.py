@@ -25,7 +25,17 @@ builtins = {
     'length': [
         Sig([Ty(TypeKind.Vec2)], Ty(TypeKind.Float)),
         Sig([Ty(TypeKind.Vec3)], Ty(TypeKind.Float)),
-    ]
+    ],
+    'min': [
+        Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Float)),
+        Sig([Ty(TypeKind.Vec2)] * 2, Ty(TypeKind.Vec2)),
+        Sig([Ty(TypeKind.Vec3)] * 2, Ty(TypeKind.Vec3)),
+    ],
+    'max': [
+        Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Float)),
+        Sig([Ty(TypeKind.Vec2)] * 2, Ty(TypeKind.Vec2)),
+        Sig([Ty(TypeKind.Vec3)] * 2, Ty(TypeKind.Vec3)),
+    ],
 }
 
 
