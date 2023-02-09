@@ -59,6 +59,43 @@ _ = [
         }
     },
     {
+        'title': "vector + float literal",
+        'src': """vec2 test() {
+            vec2 a = vec2(1.0, 2.0);
+            return a + 0.5;
+        }""",
+        'output': {
+            'ret': [1.5, 2.5, 0.0]
+        }
+    },
+    {
+        'title': "vector + float variable",
+        'src': """vec2 test() {
+            vec2 a = vec2(1.0, 2.0);
+            float b = 0.5;
+            return a + b;
+        }""",
+        'output': {
+            'ret': [1.5, 2.5, 0.0]
+        }
+    },
+    {
+        # FIXME: cast input argument to the operation type
+        # in this case multiply with [1, 1, 0] before addition
+        'skip': True,
+        'title': "vector + float argument",
+        'src': """vec2 test(float b) {
+            vec2 a = vec2(1.0, 2.0);
+            return a + b;
+        }""",
+        'input': {
+            'b': 0.5,
+        },
+        'output': {
+            'ret': [1.5, 2.5, 0.0]
+        }
+    },
+    {
         'title': "builtin functions",
         'src': """float test(inout float a, inout vec2 b) {
             a = min(a, 10.0);
