@@ -13,14 +13,20 @@ builtins = {
     'vec4': [
         Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec4)),
         Sig([Ty(TypeKind.Float)] * 4, Ty(TypeKind.Vec4)),
+        Sig([Ty(TypeKind.Int)], Ty(TypeKind.Vec4)),
+        Sig([Ty(TypeKind.Int)] * 4, Ty(TypeKind.Vec4)),
     ],
     'vec3': [
         Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec3)),
         Sig([Ty(TypeKind.Float)] * 3, Ty(TypeKind.Vec3)),
+        Sig([Ty(TypeKind.Int)], Ty(TypeKind.Vec3)),
+        Sig([Ty(TypeKind.Int)] * 3, Ty(TypeKind.Vec3)),
     ],
     'vec2': [
         Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec2)),
         Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Vec2)),
+        Sig([Ty(TypeKind.Int)], Ty(TypeKind.Vec2)),
+        Sig([Ty(TypeKind.Int)] * 2, Ty(TypeKind.Vec2)),
     ],
     'length': [
         Sig([Ty(TypeKind.Vec2)], Ty(TypeKind.Float)),
@@ -104,8 +110,11 @@ class TyChecker:
                 match left_ty.is_vector(), right_ty.is_vector():
                     case True, True:
                         assert left_ty == right_ty, f"`{kind}` is not implemented for `{left_ty.display_name()}` and `{right_ty.display_name()}`"
-                        assert expected_ty == left_ty, self.expect_ty(
-                            expected_ty, left_ty)
+                        match kind:
+                            case BinaryKind.Eq | BinaryKind.NotEq:
+                                self.expect_ty(expected_ty, Ty(TypeKind.Int))
+                            case _:
+                                self.expect_ty(expected_ty, left_ty)
                     case True, False:
                         assert expected_ty == left_ty, self.expect_ty(
                             expected_ty, left_ty)

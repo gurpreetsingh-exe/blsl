@@ -13,13 +13,33 @@ _ = [
         }
     },
     {
+        # TODO: use compare in geo nodes
         'title': "equality",
-        'src': """int test() {
-            int a = 10 == 20;
-            int b = 20.5 != 20.5;
+        'src': """int test(inout int a, inout int b, inout int c) {
+            a = 10 == 20;
+            b = 20.5 != 20.5;
+            c = 20.5 == 20.5;
             return a != b;
         }""",
         'output': {
+            'a': 0,
+            'b': 0,
+            'c': 1,
+            'ret': 0
+        }
+    },
+    {
+        'title': "vector equality",
+        'src': """int test(inout int a, inout int b, inout int c) {
+            a = vec2(10) == vec2(20);
+            b = vec2(20.5) != vec2(20.5);
+            c = vec2(20.5) == vec2(20.5);
+            return a != b;
+        }""",
+        'output': {
+            'a': 0,
+            'b': 0,
+            'c': 1,
             'ret': 0
         }
     },

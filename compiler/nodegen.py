@@ -57,9 +57,9 @@ def vec2_to_vec2(value: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy
 
 def gen_vec2(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, _) -> bpy.types.Node:
     match sig:
-        case 0:
+        case 0 | 2:
             return float_to_vec2(args[0], nt)
-        case 1:
+        case 1 | 3:
             return vec2_to_vec2(args, nt)
         case _:
             assert False
