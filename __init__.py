@@ -63,6 +63,17 @@ class BLSL_PT_Panel(Panel):
         row.prop(gc, "debug_token_output")
 
 
+class Context:
+    def __init__(self) -> None:
+        self.sources = []
+        self.filenames = []
+
+    def open_file(self, name):
+        with open(name, 'r') as f:
+            self.sources.append(f.read())
+        self.filenames.append(name)
+
+
 class BLSL_OT_compile(Operator):
     bl_idname = "blsl_compiler.compile"
     bl_label = "Compile"
@@ -108,7 +119,7 @@ class BLSL_OT_run_tests(Operator):
         return hasattr(space, 'node_tree') and space.node_tree.bl_idname == 'GeometryNodeTree'
 
     def execute(self, context):
-        addon_dir = pathlib.Path(__package__).parent
+        addon_dir = pathlib.Path(__file__).absolute().parent
         tests_dir = os.path.join(addon_dir, 'tests')
         passed = 0
         failed = 0
@@ -128,7 +139,7 @@ class BLSL_OT_run_tests(Operator):
                 if test.get('skip', False):
                     skipped += 1
                     print(
-                        f"\x1b[1;33m[WARN]\x1b[0m {file}: \"{test['title']}\" skipped")
+                        f"\x1b[1;33m[WARN]\x1b[0m {file.stem}.py: \"{test['title']}\" skipped")
                     continue
 
                 parser = parser_from_src(test['src'])
@@ -180,7 +191,7 @@ class BLSL_OT_run_tests(Operator):
                     expected = test['output'][sock.name]
                     if data[0] != expected:
                         print(
-                            f"\x1b[1;31m[ERR]\x1b[0m {file}: \"{test['title']}\" failed")
+                            f"\x1b[1;31m[ERR]\x1b[0m {file.stem}.py: \"{test['title']}\" failed")
                         print(f"    expected: {expected}")
                         print(f"    output: {data[0]}")
                         failed += 1
@@ -193,7 +204,7 @@ class BLSL_OT_run_tests(Operator):
         if failed:
             plural = "s" if failed > 1 else ""
             print(
-                f"  \x1b[1;31m[ERR]\x1b[0m {failed} test{plural} failed", end="")
+                f"  \x1b[1;31m[ERR]\x1b[0m {failed} test{plural} failed, {passed} passed", end="")
         else:
             print(f"  \x1b[1;32m[OK]\x1b[0m {passed} tests passed", end="")
         if skipped:

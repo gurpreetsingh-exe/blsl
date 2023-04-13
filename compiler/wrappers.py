@@ -85,7 +85,15 @@ class NodeTree:
                             to.default_value = data
                     case _:
                         assert False, kind
-            case _:
+            case sock:
+                match sock.type, to.type:
+                    case 'VALUE', 'VECTOR':
+                        cast = self.add_node('ShaderNodeCombineXYZ')
+                        if ty and ty.is_vector():
+                            for i in range(ty.get_size()):
+                                self._nt.links.new(from_, cast.inputs[i])
+                        from_ = cast.outputs[0]
+
                 self._nt.links.new(from_, to)
 
 

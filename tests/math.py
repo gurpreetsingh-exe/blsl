@@ -80,9 +80,6 @@ _ = [
         }
     },
     {
-        # FIXME: cast input argument to the operation type
-        # in this case multiply with [1, 1, 0] before addition
-        'skip': True,
         'title': "vector + float argument",
         'src': """vec2 test(float b) {
             vec2 a = vec2(1.0, 2.0);
