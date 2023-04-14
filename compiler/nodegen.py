@@ -3,6 +3,7 @@ import bpy
 from .Ast import *
 from .wrappers import NodeTree, Value, ValueKind
 from typing import Dict, List
+from .bltin import builtins as bltins
 
 
 def vec4_to_vec4(value: List[Value | bpy.types.NodeSocket], nt: NodeTree) -> bpy.types.Node:
@@ -75,6 +76,33 @@ def gen_length(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree,
 
 def gen_math(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
     ntype = None
+    op = None
+    match name:
+        case 'min':
+            op = 'MINIMUM'
+        case 'max':
+            op = 'MAXIMUM'
+        case _:
+            assert False
+    match sig:
+        case 0:
+            node = nt.add_node("ShaderNodeMath")
+            ntype = bpy.types.ShaderNodeMath
+        case 1 | 2 | 3 | 4:
+            node = nt.add_node("ShaderNodeVectorMath")
+            ntype = bpy.types.ShaderNodeVectorMath
+        case _:
+            assert False
+    assert isinstance(node, ntype)
+    node.operation = op
+    ty = bltins[name][sig].ret_ty
+    for i in range(2):
+        nt.link(args[i], node.inputs[i], ty)
+    return node
+
+
+def gen_abs(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
+    ntype = None
     match sig:
         case 0:
             node = nt.add_node("ShaderNodeMath")
@@ -85,17 +113,9 @@ def gen_math(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, n
         case _:
             assert False
     assert isinstance(node, ntype)
-    op = None
-    match name:
-        case 'min':
-            op = 'MINIMUM'
-        case 'max':
-            op = 'MAXIMUM'
-        case _:
-            assert False
-    node.operation = op
-    for i in range(2):
-        nt.link(args[i], node.inputs[i])
+    node.operation = 'ABSOLUTE'
+    ty = bltins[name][sig].ret_ty
+    nt.link(args[0], node.inputs[0], ty)
     return node
 
 
@@ -106,6 +126,7 @@ builtins = {
     'length': gen_length,
     'min': gen_math,
     'max': gen_math,
+    'abs': gen_abs,
 }
 
 

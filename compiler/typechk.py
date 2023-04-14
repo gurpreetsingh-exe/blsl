@@ -1,48 +1,7 @@
 from __future__ import annotations
 from typing import Dict
 from .Ast import *
-
-
-class Sig:
-    def __init__(self, args: List[Ty], ret_ty: Ty) -> None:
-        self.args = args
-        self.ret_ty = ret_ty
-
-
-builtins = {
-    'vec4': [
-        Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec4)),
-        Sig([Ty(TypeKind.Float)] * 4, Ty(TypeKind.Vec4)),
-        Sig([Ty(TypeKind.Int)], Ty(TypeKind.Vec4)),
-        Sig([Ty(TypeKind.Int)] * 4, Ty(TypeKind.Vec4)),
-    ],
-    'vec3': [
-        Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec3)),
-        Sig([Ty(TypeKind.Float)] * 3, Ty(TypeKind.Vec3)),
-        Sig([Ty(TypeKind.Int)], Ty(TypeKind.Vec3)),
-        Sig([Ty(TypeKind.Int)] * 3, Ty(TypeKind.Vec3)),
-    ],
-    'vec2': [
-        Sig([Ty(TypeKind.Float)], Ty(TypeKind.Vec2)),
-        Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Vec2)),
-        Sig([Ty(TypeKind.Int)], Ty(TypeKind.Vec2)),
-        Sig([Ty(TypeKind.Int)] * 2, Ty(TypeKind.Vec2)),
-    ],
-    'length': [
-        Sig([Ty(TypeKind.Vec2)], Ty(TypeKind.Float)),
-        Sig([Ty(TypeKind.Vec3)], Ty(TypeKind.Float)),
-    ],
-    'min': [
-        Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Float)),
-        Sig([Ty(TypeKind.Vec2)] * 2, Ty(TypeKind.Vec2)),
-        Sig([Ty(TypeKind.Vec3)] * 2, Ty(TypeKind.Vec3)),
-    ],
-    'max': [
-        Sig([Ty(TypeKind.Float)] * 2, Ty(TypeKind.Float)),
-        Sig([Ty(TypeKind.Vec2)] * 2, Ty(TypeKind.Vec2)),
-        Sig([Ty(TypeKind.Vec3)] * 2, Ty(TypeKind.Vec3)),
-    ],
-}
+from .bltin import *
 
 
 class TyEnv:
@@ -207,7 +166,7 @@ class TyChecker:
                     print("fn:", self.ty_env.fns[name])
                     assert False
                 else:
-                    assert False
+                    assert False, name
             case _:
                 assert False, type(expr.kind)
 
