@@ -33,4 +33,19 @@ _ = [
             'd': [25.0, 54.0, 34.0]
         }
     },
+    {
+        'title': "inouts assign",
+        'src': """vec2 test(inout float b) {
+            vec2 a = vec2(b, 2.0);
+            b = 50.0;
+            return a + b;
+        }""",
+        'input': {
+            'b': 20.0,
+        },
+        'output': {
+            'ret': [70.0, 52.0, 0.0],
+            'b': 50.0,
+        }
+    },
 ]

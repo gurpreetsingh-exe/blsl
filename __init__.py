@@ -125,6 +125,13 @@ class BLSL_OT_run_tests(Operator):
         failed = 0
         skipped = 0
         print()
+
+        def eq(data, expected):
+            if type(expected) == np.ndarray:
+                return any(data != expected)
+            else:
+                return data != expected
+
         for file in pathlib.Path(tests_dir).iterdir():
             if file.suffix != '.py':
                 continue
@@ -173,23 +180,23 @@ class BLSL_OT_run_tests(Operator):
                     storage_type = None
                     match ty := __attr.data_type:
                         case 'INT':
-                            data = [0] * size
+                            data = np.zeros(size, dtype=np.int32)
                             storage_type = 'value'
                         case 'FLOAT':
-                            data = [0.0] * size
+                            data = np.zeros(size, dtype=np.float32)
                             storage_type = 'value'
                         case 'FLOAT_VECTOR':
                             size *= 3
-                            data = [0.0] * size
+                            data = np.zeros(size, dtype=np.float32)
                             storage_type = 'vector'
                         case _:
                             assert False, f"{ty}"
                     attr.foreach_get(storage_type, data)
                     assert len(data) == size
                     if storage_type == 'vector':
-                        data = np.reshape(data, (1, 3)).tolist()
-                    expected = test['output'][sock.name]
-                    if data[0] != expected:
+                        data = np.reshape(data, (1, 3))
+                    expected = np.float32(test['output'][sock.name])
+                    if eq(data[0], expected):
                         print(
                             f"\x1b[1;31m[ERR]\x1b[0m {file.stem}.py: \"{test['title']}\" failed")
                         print(f"    expected: {expected}")
