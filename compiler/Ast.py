@@ -169,6 +169,14 @@ class Call:
         self.sig: int | None = None
 
 
+class Field:
+    __match_args__ = ('name', 'field', )
+
+    def __init__(self, name: Ident, field: Ident):
+        self.name = name
+        self.field = field
+
+
 class Decl:
     __match_args__ = ('name', 'ty', 'init', )
 

@@ -129,6 +129,8 @@ builtins = {
     'abs': gen_abs,
 }
 
+field_to_socket_index = {'x': 0, 'y': 1, 'z': 2}
+
 
 def n_out(node: bpy.types.Node) -> bpy.types.NodeSocket:
     visible_outputs = [output for output in node.outputs if output.enabled]
@@ -245,6 +247,15 @@ class NodeGen:
                     node = nt.add_group()
                     node.node_tree = bpy.data.node_groups.get(name)
                 return n_out(node)
+            case Field(Ident(name), Ident(field)):
+                var = self.env.get(name)
+                match var:
+                    case bpy.types.NodeSocketVector():
+                        out = nt.add_node("ShaderNodeSeparateXYZ")
+                        nt.link(var, out.inputs[0])
+                        return out.outputs[field_to_socket_index[field]]
+                    case _:
+                        assert False
             case _:
                 assert False, f"{expr.kind}"
 

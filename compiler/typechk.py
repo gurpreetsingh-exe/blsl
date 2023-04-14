@@ -111,6 +111,22 @@ class TyChecker:
 
                 elif name in self.ty_env.fns:
                     print("fn:", self.ty_env.fns[name])
+                    assert False
+            case Field(Ident(name), Ident(field)):
+                var = self.find_var(name)
+                match var.kind:
+                    case TypeKind.Int | TypeKind.Float:
+                        assert False, f"`{var.kind.name.lower()}` has no field `{field}`"
+                    case TypeKind.Vec2:
+                        if field not in {'x', 'y'}:
+                            assert False, f"`vec2` has no field `{field}`"
+                        self.expect_ty(expected_ty, Tfloat)
+                    case TypeKind.Vec3:
+                        if field not in {'x', 'y', 'z'}:
+                            assert False, f"`vec3` has no field `{field}`"
+                        self.expect_ty(expected_ty, Tfloat)
+                    case _:
+                        assert False
             case _:
                 assert False, f"{expr.kind}"
 
@@ -167,6 +183,20 @@ class TyChecker:
                     assert False
                 else:
                     assert False, name
+            case Field(Ident(name), Ident(field)):
+                var = self.find_var(name)
+                match var.kind:
+                    case TypeKind.Int | TypeKind.Float:
+                        assert False, f"`{var.kind.name.lower()}` has no field `{field}`"
+                    case TypeKind.Vec2:
+                        if field not in {'x', 'y'}:
+                            assert False, f"`vec2` has no field `{field}`"
+                        return Tfloat
+                    case TypeKind.Vec3:
+                        if field not in {'x', 'y', 'z'}:
+                            assert False, f"`vec3` has no field `{field}`"
+                        return Tfloat
+                assert False
             case _:
                 assert False, type(expr.kind)
 

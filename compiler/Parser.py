@@ -108,6 +108,12 @@ class Parser:
         self.expect(TokenKind.RParen)
         return Call(ident, args)
 
+    def parse_field_selector(self) -> Field:
+        name = self.parse_ident()
+        self.expect(TokenKind.Period)
+        field = self.parse_ident()
+        return Field(name, field)
+
     def parse_primary(self) -> Expr:
         match self.t.kind:
             case TokenKind.Ident:
@@ -117,6 +123,8 @@ class Parser:
                 match next.kind:
                     case TokenKind.LParen:
                         return Expr(self.parse_call())
+                    case TokenKind.Period:
+                        return Expr(self.parse_field_selector())
                     case _:
                         return Expr(self.parse_ident())
             case TokenKind.Int \
