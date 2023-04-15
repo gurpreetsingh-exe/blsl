@@ -298,6 +298,13 @@ class NodeGen:
                         return out.outputs[field_to_socket_index[field]]
                     case _:
                         assert False
+            case Unary(_, expr):
+                sock = self.gen_expr(expr, nt)
+                out = nt.add_node("ShaderNodeMath")
+                out.operation = "SUBTRACT"
+                nt.link(Value(ValueKind.Int, 0), out.inputs[0])
+                nt.link(sock, out.inputs[1])
+                return n_out(out)
             case _:
                 assert False, f"{expr.kind}"
 

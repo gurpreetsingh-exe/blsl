@@ -127,6 +127,8 @@ class TyChecker:
                         self.expect_ty(expected_ty, Tfloat)
                     case _:
                         assert False
+            case Unary(_, expr):
+                self.expect_ty(expected_ty, self.infer(expr))
             case _:
                 assert False, f"{expr.kind}"
 
@@ -197,6 +199,8 @@ class TyChecker:
                             assert False, f"`vec3` has no field `{field}`"
                         return Tfloat
                 assert False
+            case Unary(_, expr):
+                return self.infer(expr)
             case _:
                 assert False, type(expr.kind)
 

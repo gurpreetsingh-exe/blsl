@@ -5,7 +5,7 @@ _ = [
             vec3 v = ro - loc;
             float a = dot(v, rd);
             float b = dot(v, v) - radius * radius;
-            return 0 - a + sqrt(a * a - b);
+            return -a - sqrt(a * a - b);
         }""",
         'input': {
             'ro': [5.0, 7.0, 0.0],

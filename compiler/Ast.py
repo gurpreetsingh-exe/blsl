@@ -138,6 +138,18 @@ class Binary:
         self.ty: Ty | None = None
 
 
+class UnaryKind(Enum):
+    Negative = auto()
+
+
+class Unary:
+    __match_args__ = ('kind', 'expr', )
+
+    def __init__(self, kind: UnaryKind, expr: Expr):
+        self.kind = kind
+        self.expr = expr
+
+
 class Assign:
     __match_args__ = ('left', 'init', )
 

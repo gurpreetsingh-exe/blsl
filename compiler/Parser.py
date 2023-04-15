@@ -141,7 +141,12 @@ class Parser:
                 assert False, f"{self.t.kind}, not implemented"
 
     def parse_unary(self) -> Expr:
-        return self.parse_primary()
+        match self.t.kind:
+            case TokenKind.Minus:
+                self.eat()
+                return Expr(Unary(UnaryKind.Negative, self.parse_primary()))
+            case _:
+                return self.parse_primary()
 
     def parse_factor(self) -> Expr:
         left = self.parse_unary()
