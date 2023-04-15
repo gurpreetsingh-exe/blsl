@@ -56,4 +56,42 @@ _ = [
             'ret': 10.0,
         }
     },
+    {
+        'title': "dot",
+        'src': """void test(out float a, out float b) {
+            a = dot(vec2(1.0), vec2(2.0));
+            b = dot(vec3(1.0), vec3(1.0, 2.0, 3.0));
+        }""",
+        'output': {
+            'a': 4.0,
+            'b': 6.0,
+        }
+    },
+    {
+        'title': "cross",
+        'src': """vec3 test() {
+            return cross(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+        }""",
+        'output': {
+            'ret': [0.0, 0.0, 1.0],
+        }
+    },
+    {
+        'title': "clamp",
+        'src': """float test() {
+            return clamp(50.0, 0.0, 10.0);
+        }""",
+        'output': {
+            'ret': 10.0,
+        }
+    },
+    {
+        'title': "sqrt",
+        'src': """float test() {
+            return sqrt(25.0);
+        }""",
+        'output': {
+            'ret': 5.0,
+        }
+    },
 ]

@@ -129,12 +129,31 @@ def gen_dot(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, na
     return node
 
 
+def gen_cross(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
+    node = nt.add_node("ShaderNodeVectorMath")
+    assert isinstance(node, bpy.types.ShaderNodeVectorMath)
+    node.operation = 'CROSS_PRODUCT'
+    ty = bltins[name][sig].ret_ty
+    for i in range(2):
+        nt.link(args[i], node.inputs[i], ty)
+    return node
+
+
 def gen_clamp(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
     node = nt.add_node("ShaderNodeClamp")
     assert isinstance(node, bpy.types.ShaderNodeClamp)
     ty = bltins[name][sig].ret_ty
     for i in range(3):
         nt.link(args[i], node.inputs[i], ty)
+    return node
+
+
+def gen_sqrt(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
+    node = nt.add_node("ShaderNodeMath")
+    assert isinstance(node, bpy.types.ShaderNodeMath)
+    node.operation = 'SQRT'
+    ty = bltins[name][sig].ret_ty
+    nt.link(args[0], node.inputs[0], ty)
     return node
 
 
@@ -147,7 +166,9 @@ builtins = {
     'max': gen_math,
     'abs': gen_abs,
     'dot': gen_dot,
+    'cross': gen_cross,
     'clamp': gen_clamp,
+    'sqrt': gen_sqrt,
 }
 
 field_to_socket_index = {'x': 0, 'y': 1, 'z': 2}

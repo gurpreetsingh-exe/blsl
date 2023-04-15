@@ -59,7 +59,13 @@ builtins = {
         Sig([vec2, vec2], Tfloat),
         Sig([vec3, vec3], Tfloat),
     ],
+    'cross': [
+        Sig([vec3, vec3], vec3),
+    ],
     'clamp': [
         Sig([Tfloat, Tfloat, Tfloat], Tfloat),
+    ],
+    'sqrt': [
+        Sig([Tfloat], Tfloat),
     ],
 }
