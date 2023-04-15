@@ -55,4 +55,11 @@ builtins = {
         Sig([vec2], vec2),
         Sig([vec3], vec3),
     ],
+    'dot': [
+        Sig([vec2, vec2], Tfloat),
+        Sig([vec3, vec3], Tfloat),
+    ],
+    'clamp': [
+        Sig([Tfloat, Tfloat, Tfloat], Tfloat),
+    ],
 }

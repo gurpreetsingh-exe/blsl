@@ -178,12 +178,11 @@ class Field:
 
 
 class Decl:
-    __match_args__ = ('name', 'ty', 'init', )
+    __match_args__ = ('ty', 'decls', )
 
-    def __init__(self, name: Ident, ty: Ty, init: Expr | None):
-        self.name = name
+    def __init__(self, ty: Ty, decls: ExprStmt):
         self.ty = ty
-        self.init = init
+        self.decls = decls
 
 
 class ExprStmt:

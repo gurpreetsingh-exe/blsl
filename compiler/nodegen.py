@@ -119,6 +119,25 @@ def gen_abs(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, na
     return node
 
 
+def gen_dot(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
+    node = nt.add_node("ShaderNodeVectorMath")
+    assert isinstance(node, bpy.types.ShaderNodeVectorMath)
+    node.operation = 'DOT_PRODUCT'
+    ty = bltins[name][sig].ret_ty
+    for i in range(2):
+        nt.link(args[i], node.inputs[i], ty)
+    return node
+
+
+def gen_clamp(sig: int, args: List[Value | bpy.types.NodeSocket], nt: NodeTree, name: str) -> bpy.types.Node:
+    node = nt.add_node("ShaderNodeClamp")
+    assert isinstance(node, bpy.types.ShaderNodeClamp)
+    ty = bltins[name][sig].ret_ty
+    for i in range(3):
+        nt.link(args[i], node.inputs[i], ty)
+    return node
+
+
 builtins = {
     'vec4': gen_vec4,
     'vec3': gen_vec3,
@@ -127,6 +146,8 @@ builtins = {
     'min': gen_math,
     'max': gen_math,
     'abs': gen_abs,
+    'dot': gen_dot,
+    'clamp': gen_clamp,
 }
 
 field_to_socket_index = {'x': 0, 'y': 1, 'z': 2}
@@ -265,10 +286,15 @@ class NodeGen:
                 case ExprStmt(exprs):
                     for expr in exprs:
                         self.gen_expr(expr, nt)
-                case Decl(Ident(name), _, init):
-                    if init:
-                        sock = self.gen_expr(init, nt)
-                        self.env.bind(name, sock)
+                case Decl(_, exprs):
+                    for expr in exprs.exprs:
+                        match expr.kind:
+                            case Assign(Expr(Ident(name)), init):
+                                if init:
+                                    sock = self.gen_expr(init, nt)
+                                    self.env.bind(name, sock)
+                            case _:
+                                assert False
                 case Return(expr):
                     sock_out = self.gen_expr(expr, nt)
                     match sock_out:

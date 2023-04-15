@@ -201,15 +201,8 @@ class Parser:
 
     def parse_decl_stmt(self) -> Decl:
         ty = self.parse_ty()
-        name = self.parse_ident()
-        if self.t.kind == TokenKind.Semi:
-            self.eat()
-            return Decl(name, ty, None)
-        elif self.t.kind == TokenKind.Eq:
-            self.eat()
-            return Decl(name, ty, self.parse_expr())
-        else:
-            assert False
+        exprs = self.parse_expr_stmt()
+        return Decl(ty, exprs)
 
     def parse_stmt(self) -> Stmt | None:
         if self.t.kind.get_ty():

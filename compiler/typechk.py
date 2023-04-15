@@ -205,10 +205,15 @@ class TyChecker:
             case ExprStmt(exprs):
                 for expr in exprs:
                     self.infer(expr)
-            case Decl(Ident(name), ty, init):
-                self.ty_env.bind(name, ty)
-                if init:
-                    self.check(init, ty)
+            case Decl(ty, exprs):
+                for expr in exprs.exprs:
+                    match expr.kind:
+                        case Assign(Expr(Ident(name)), init):
+                            self.ty_env.bind(name, ty)
+                            if init:
+                                self.check(init, ty)
+                        case _:
+                            assert False
             case Return(expr):
                 assert self.fn != None
                 self.check(expr, self.fn.ret_ty)
